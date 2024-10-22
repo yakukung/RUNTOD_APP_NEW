@@ -761,7 +761,6 @@ class _ProfileUserPageState extends State<ProfileUserPage> {
                       TextButton(
                         onPressed: () {
                           Navigator.of(context).pop();
-                          overlayEntry.remove();
                         },
                         child: const Text(
                           'ยกเลิก',

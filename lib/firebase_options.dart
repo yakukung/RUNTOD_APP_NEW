@@ -41,48 +41,48 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyAyegoK0mB7mbZeu_fj4VpEFge-zFKhit4',
-    appId: '1:527210304558:web:cbddff8bf9fd16f985bbbf',
-    messagingSenderId: '527210304558',
-    projectId: 'runtod-app',
-    authDomain: 'runtod-app.firebaseapp.com',
-    storageBucket: 'runtod-app.appspot.com',
-    measurementId: 'G-6PJVJ39F11',
+    apiKey: 'AIzaSyA-tj1o0KovqtUDFdjs2lK5pXvUJRkwSW4',
+    appId: '1:863376903260:web:e72065d12fa4dde426aa99',
+    messagingSenderId: '863376903260',
+    projectId: 'runtod-delivery',
+    authDomain: 'runtod-delivery.firebaseapp.com',
+    storageBucket: 'runtod-delivery.appspot.com',
+    measurementId: 'G-JN2XFFHMQE',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDNwXpa2C6Xy4EI4BMyVXWfUUvnShZb_qs',
-    appId: '1:527210304558:android:b1c52db65cedcfd985bbbf',
-    messagingSenderId: '527210304558',
-    projectId: 'runtod-app',
-    storageBucket: 'runtod-app.appspot.com',
+    apiKey: 'AIzaSyCZ1Fdj9T62UBzR8t0TrThiZbu9ETvClNM',
+    appId: '1:863376903260:android:6e75fd708ee6b9c126aa99',
+    messagingSenderId: '863376903260',
+    projectId: 'runtod-delivery',
+    storageBucket: 'runtod-delivery.appspot.com',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyBxgFr4edvLmUwothS8kp3OWQmFSzVS5LY',
-    appId: '1:527210304558:ios:fe662cb62578764985bbbf',
-    messagingSenderId: '527210304558',
-    projectId: 'runtod-app',
-    storageBucket: 'runtod-app.appspot.com',
+    apiKey: 'AIzaSyBOoz-Uz33y4CPDvyN_dDf4grbboGTMPhg',
+    appId: '1:863376903260:ios:c4c16903cc02f36126aa99',
+    messagingSenderId: '863376903260',
+    projectId: 'runtod-delivery',
+    storageBucket: 'runtod-delivery.appspot.com',
     iosBundleId: 'com.example.runtodApp',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyBxgFr4edvLmUwothS8kp3OWQmFSzVS5LY',
-    appId: '1:527210304558:ios:fe662cb62578764985bbbf',
-    messagingSenderId: '527210304558',
-    projectId: 'runtod-app',
-    storageBucket: 'runtod-app.appspot.com',
+    apiKey: 'AIzaSyBOoz-Uz33y4CPDvyN_dDf4grbboGTMPhg',
+    appId: '1:863376903260:ios:c4c16903cc02f36126aa99',
+    messagingSenderId: '863376903260',
+    projectId: 'runtod-delivery',
+    storageBucket: 'runtod-delivery.appspot.com',
     iosBundleId: 'com.example.runtodApp',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyAyegoK0mB7mbZeu_fj4VpEFge-zFKhit4',
-    appId: '1:527210304558:web:b614b18eb7ae616d85bbbf',
-    messagingSenderId: '527210304558',
-    projectId: 'runtod-app',
-    authDomain: 'runtod-app.firebaseapp.com',
-    storageBucket: 'runtod-app.appspot.com',
-    measurementId: 'G-YH1HZ3WMY3',
+    apiKey: 'AIzaSyA-tj1o0KovqtUDFdjs2lK5pXvUJRkwSW4',
+    appId: '1:863376903260:web:fd73a6f4d1b9278e26aa99',
+    messagingSenderId: '863376903260',
+    projectId: 'runtod-delivery',
+    authDomain: 'runtod-delivery.firebaseapp.com',
+    storageBucket: 'runtod-delivery.appspot.com',
+    measurementId: 'G-MGDCT26XTG',
   );
 }
