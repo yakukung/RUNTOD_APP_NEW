@@ -8,10 +8,7 @@ import 'package:runtod_app/model/Response/UsersLoginPostResponse.dart';
 import 'package:http/http.dart' as http;
 import 'package:runtod_app/config/internal_config.dart';
 import 'package:runtod_app/pages/intro.dart';
-import 'package:runtod_app/pages/nav-user/navbar.dart';
-import 'package:runtod_app/pages/nav-user/navbottom.dart';
-import 'package:runtod_app/sidebar/userSidebar.dart';
-import 'package:runtod_app/widget/profilePictureWidget.dart';
+import 'package:runtod_app/pages/user/home/searchNumberUser.dart';
 
 class Addproduct extends StatefulWidget {
   const Addproduct({super.key});
@@ -22,8 +19,8 @@ class Addproduct extends StatefulWidget {
 
 class _AddproductState extends State<Addproduct> {
   late Future<UsersLoginPostResponse> loadDataUser;
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  String imageUrl = '';
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController descriptionController = TextEditingController();
   File? profileImage;
 
   @override
@@ -41,11 +38,15 @@ class _AddproductState extends State<Addproduct> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back), // ไอคอนเริ่มต้นย้อนกลับ
-          onPressed: () {
-            Navigator.pop(context); // เมื่อกดจะย้อนกลับไปหน้าก่อนหน้า
-          },
+        leading: Row(
+          children: [
+            IconButton(
+              icon: Icon(Icons.arrow_back),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            ),
+          ],
         ),
       ),
       body: SingleChildScrollView(
@@ -55,67 +56,195 @@ class _AddproductState extends State<Addproduct> {
             if (!userSnapshot.hasData) {
               return const Center(child: CircularProgressIndicator());
             }
-            final user = userSnapshot.data!;
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(height: 40),
+                SizedBox(height: 20),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    FutureBuilder<UsersLoginPostResponse>(
-                      future: loadDataUser,
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const CircularProgressIndicator();
-                        } else if (snapshot.hasError) {
-                          return Text('Error: ${snapshot.error}');
-                        } else if (snapshot.hasData) {
-                          return GestureDetector(
-                            onTap: () async {
-                              // ฟังก์ชันสำหรับการเลือกไฟล์ใหม่
-                              File? newImage = await _pickImage();
-                              if (newImage != null) {
-                                setState(() {
-                                  profileImage = newImage;
-                                });
-                                print('New image selected: ${newImage.path}');
-                              }
-                            },
-                            child: Container(
-                              width: 100, // ขนาดของกรอบสี่เหลี่ยม
-                              height: 100,
-                              decoration: BoxDecoration(
-                                color: Colors.grey[200], // สีพื้นหลัง
-                                border:
-                                    Border.all(color: Colors.grey), // สีของขอบ
-                                borderRadius: BorderRadius.circular(
-                                    8), // มุมโค้งของสี่เหลี่ยม
-                              ),
-                              child: Center(
-                                child: Icon(
-                                  Icons.add, // เครื่องหมายบวก
-                                  size: 80,
-                                  color: Colors.grey, // สีของเครื่องหมายบวก
-                                ),
-                              ),
-                            ),
-                          );      
-                          
-                        } else {
-                          return const Text('No data available');
+                    GestureDetector(
+                      onTap: () async {
+                        File? newImage = await _pickImage();
+                        if (newImage != null) {
+                          setState(() {
+                            profileImage = newImage;
+                          });
+                          print('New image selected: ${newImage.path}');
                         }
                       },
+                      child: Container(
+                        width: 150,
+                        height: 150,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          border: Border.all(color: Colors.grey),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Center(
+                          child: Icon(
+                            Icons.add,
+                            size: 80,
+                            color: Colors.grey,
+                          ),
+                          
+                        ),
+                        
+                      ),
+                    ),
+                    const SizedBox(
+                        width: 10), // เพิ่มช่องว่างระหว่างรูปภาพกับฟิลด์ชื่อ
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // ฟิลด์เก็บชื่อ
+                          TextField(
+                            controller: nameController,
+                            decoration: const InputDecoration(
+                              labelText: 'ชื่อสินค้า',
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                          const SizedBox(
+                              height:
+                                  10), // เพิ่มระยะห่างระหว่างฟิลด์ชื่อและฟิลด์รายละเอียด
+                          // ฟิลด์เก็บรายละเอียด
+                          TextField(
+                            controller: descriptionController,
+                            maxLines: 4,
+                            decoration: const InputDecoration(
+                              labelText: 'รายละเอียดสินค้า',
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
+                SizedBox(height: 40),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    GestureDetector(
+                      onTap: () async {
+                        File? newImage = await _pickImage();
+                        if (newImage != null) {
+                          setState(() {
+                            profileImage = newImage;
+                          });
+                          print('New image selected: ${newImage.path}');
+                        }
+                      },
+                      child: Container(
+                        width: 300,
+                        height: 150,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          border: Border.all(color: Colors.grey),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Center(
+                          child: Text(
+                            'ภาพประกอบสถานะ',
+                            style: TextStyle(
+                              fontSize: 15, // ขนาดข้อความ
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 20),
+                const Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    SizedBox(width: 16),
+                    Text('ผู้รับ',
+                        style: TextStyle(
+                          fontSize: 30, // ขนาดข้อความ
+                          color: Color.fromARGB(255, 255, 255, 255),
+                        )),
+                  ],
+                ),
+                SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        Get.to(() => Searchnumberuser());
+                      },
+                      child: Container(
+                        width: 300,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          border: Border.all(color: Colors.grey),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Center(
+                          child: Icon(
+                            Icons.add,
+                            size: 80,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 20),
+                // ปุ่มบันทึกข้อมูล
+                Center(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      // เรียกฟังก์ชันเพื่อบันทึกข้อมูล
+                      _saveData();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor:
+                          Colors.green, // กำหนดสีพื้นหลังเป็นสีเขียว
+                    ),
+                    child: const Text('บันทึกข้อมูล'),
+                  ),
+                ),
+                SizedBox(height: 20),
               ],
             );
           },
         ),
       ),
     );
+  }
+
+// ฟังก์ชันสำหรับบันทึกข้อมูล
+  void _saveData() {
+    String name = nameController.text;
+    String description = descriptionController.text;
+
+    if (profileImage != null) {
+      // ในที่นี้คุณสามารถบันทึกข้อมูล name, description และ profileImage ตามที่ต้องการ
+      print('ชื่อสินค้า: $name');
+      print('รายละเอียดสินค้า: $description');
+      print('รูปภาพ: ${profileImage!.path}');
+
+      // ตัวอย่างการบันทึกข้อมูลไปยังเซิร์ฟเวอร์หรือฐานข้อมูล
+      // await saveToDatabase(name, description, profileImage!);
+
+      // แสดงข้อความยืนยันว่าบันทึกสำเร็จ
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('บันทึกข้อมูลเรียบร้อยแล้ว')),
+      );
+    } else {
+      // แสดงข้อความเตือนเมื่อไม่มีรูปภาพ
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('กรุณาเลือกภาพประกอบ')),
+      );
+    }
   }
 
   Future<UsersLoginPostResponse> fetchUserData() async {
@@ -140,7 +269,6 @@ class _AddproductState extends State<Addproduct> {
     try {
       GetStorage gs = GetStorage();
       await gs.erase();
-      print('Storage cleared successfully');
     } catch (e) {
       print('Error clearing storage: $e');
     } finally {
@@ -152,8 +280,8 @@ class _AddproductState extends State<Addproduct> {
     final pickedFile =
         await ImagePicker().pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
-      return File(pickedFile.path); // แปลงไฟล์เป็น File
+      return File(pickedFile.path);
     }
-    return null; // กรณีไม่เลือกไฟล์
+    return null;
   }
 }
