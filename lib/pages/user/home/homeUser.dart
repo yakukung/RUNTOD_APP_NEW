@@ -122,7 +122,7 @@ class _HomeUserPageState extends State<HomeUserPage> {
                             color: Color(0xFFFFFFFF), size: 25),
                         SizedBox(width: 5),
                         Text(
-                          'ที่อยู่ของฉัน',
+                          'ตั้งค่าที่อยู่รับสินค้าที่นี่',
                           style: TextStyle(
                             fontFamily: 'SukhumvitSet',
                             fontWeight: FontWeight.bold,

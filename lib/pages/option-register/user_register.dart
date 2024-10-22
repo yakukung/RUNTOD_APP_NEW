@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:runtod_app/config/internal_config.dart';
@@ -27,7 +28,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
   TextEditingController phoneCtl = TextEditingController();
   TextEditingController passwordCtl = TextEditingController();
   TextEditingController confirmpasswordtCtl = TextEditingController();
-  TextEditingController addresstCtl = TextEditingController();
+  TextEditingController addressCtl = TextEditingController();
 
   String imageUrl = '';
   File? profileImage;
@@ -46,273 +47,310 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
     double customPadding = isPortrait ? 35.0 : 70.0;
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF000000),
-        iconTheme: const IconThemeData(color: Colors.white),
-      ),
       body: SingleChildScrollView(
         child: Container(
           decoration: const BoxDecoration(
             color: Colors.black,
           ),
-          child: Padding(
-            padding: EdgeInsets.only(left: customPadding, right: customPadding),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const Text(
-                  'ลงทะเบียน',
-                  style: TextStyle(
-                    fontSize: 35,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'SukhumvitSet',
-                    color: Color(0xFFFFFFFF),
-                  ),
-                ),
-                const Text(
-                  'สร้างบัญชีใหม่สำหรับผู้ใช้ระบบของคุณ',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF6C6C6C),
-                    fontFamily: 'SukhumvitSet',
-                  ),
-                ),
-                const SizedBox(height: 20),
-                ProfilePictureWidget(
-                  imageUrl: imageUrl,
-                  onImageChanged: handleImageChanged,
-                ),
-                const SizedBox(height: 20),
-                TextField(
-                  controller: usernameCtl,
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: const Color(0xFF1D1D1F),
-                    hintText: 'ชื่อผู้ใช้',
-                    hintStyle: const TextStyle(
-                      fontFamily: 'SukhumvitSet',
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: Color(0xFF7B7B7C),
-                    ),
-                    prefixIcon: const Icon(Icons.person, color: Colors.white),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(18),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                  style: const TextStyle(
-                    fontFamily: 'SukhumvitSet',
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: Color(0xFFFFFFFF),
-                  ),
-                ),
-                const SizedBox(height: 15),
-                TextField(
-                  controller: fullnameCtl,
-                  keyboardType: TextInputType.name,
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: const Color(0xFF1D1D1F),
-                    hintText: 'ชื่อ-สกุล',
-                    hintStyle: const TextStyle(
-                      fontFamily: 'SukhumvitSet',
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: Color(0xFF7B7B7C),
-                    ),
-                    prefixIcon: const Icon(Icons.person, color: Colors.white),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(18),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                  style: const TextStyle(
-                    fontFamily: 'SukhumvitSet',
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: Color(0xFFFFFFFF),
-                  ),
-                ),
-                const SizedBox(height: 15),
-                TextField(
-                  controller: emailCtl,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: const Color(0xFF1D1D1F),
-                    hintText: 'อีเมล',
-                    hintStyle: const TextStyle(
-                      fontFamily: 'SukhumvitSet',
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: Color(0xFF7B7B7C),
-                    ),
-                    prefixIcon: const Icon(Icons.email, color: Colors.white),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(18),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                  style: const TextStyle(
-                    fontFamily: 'SukhumvitSet',
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: Color(0xFFFFFFFF),
-                  ),
-                ),
-                const SizedBox(height: 15),
-                TextField(
-                  controller: phoneCtl,
-                  keyboardType: TextInputType.phone,
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: const Color(0xFF1D1D1F),
-                    hintText: 'โทรศัพท์',
-                    hintStyle: const TextStyle(
-                      fontFamily: 'SukhumvitSet',
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: Color(0xFF7B7B7C),
-                    ),
-                    prefixIcon:
-                        const Icon(Icons.phone_iphone, color: Colors.white),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(18),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                  style: const TextStyle(
-                    fontFamily: 'SukhumvitSet',
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: Color(0xFFFFFFFF),
-                  ),
-                ),
-                const SizedBox(height: 15),
-                TextField(
-                  controller: addresstCtl,
-                  keyboardType: TextInputType.name,
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: const Color(0xFF1D1D1F),
-                    hintText: 'ที่อยู่',
-                    hintStyle: const TextStyle(
-                      fontFamily: 'SukhumvitSet',
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: Color(0xFF7B7B7C),
-                    ),
-                    prefixIcon:
-                        const Icon(Icons.home_rounded, color: Colors.white),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(18),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                  style: const TextStyle(
-                    fontFamily: 'SukhumvitSet',
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: Color(0xFFFFFFFF),
-                  ),
-                ),
-                const SizedBox(height: 15),
-                TextField(
-                  controller: passwordCtl,
-                  keyboardType: TextInputType.visiblePassword,
-                  obscureText: _obscureText,
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: const Color(0xFF1D1D1F),
-                    hintText: 'รหัสผ่าน',
-                    hintStyle: const TextStyle(
-                      fontFamily: 'SukhumvitSet',
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: Color(0xFF7B7B7C),
-                    ),
-                    prefixIcon: const Icon(Icons.lock, color: Colors.white),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscureText ? Icons.visibility_off : Icons.visibility,
-                        color: Colors.white,
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 40, left: 10),
+                    child: Positioned(
+                      child: ClipOval(
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+                          child: Container(
+                            padding: const EdgeInsets.all(5),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.withOpacity(0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Transform.translate(
+                              offset: const Offset(-1.0, 0.0),
+                              child: IconButton(
+                                icon: const Icon(
+                                    Icons.arrow_back_ios_new_rounded,
+                                    color: Colors.white),
+                                onPressed: () =>
+                                    Get.to(() => const LoginPage()),
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
-                      onPressed: _togglePasswordVisibility,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(18),
-                      borderSide: BorderSide.none,
                     ),
                   ),
-                  style: const TextStyle(
-                    fontFamily: 'SukhumvitSet',
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: Color(0xFFFFFFFF),
-                  ),
-                ),
-                const SizedBox(height: 15),
-                TextField(
-                  keyboardType: TextInputType.visiblePassword,
-                  controller: confirmpasswordtCtl,
-                  obscureText: _obscureTextCF,
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: const Color(0xFF1D1D1F),
-                    hintText: 'ยืนยันรหัสผ่าน',
-                    hintStyle: const TextStyle(
-                      fontFamily: 'SukhumvitSet',
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: Color(0xFF7B7B7C),
-                    ),
-                    prefixIcon: const Icon(Icons.lock, color: Colors.white),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscureTextCF
-                            ? Icons.visibility_off
-                            : Icons.visibility,
-                        color: Colors.white,
+                ],
+              ),
+              Padding(
+                padding:
+                    EdgeInsets.only(left: customPadding, right: customPadding),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const Text(
+                      'ลงทะเบียน',
+                      style: TextStyle(
+                        fontSize: 35,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'SukhumvitSet',
+                        color: Color(0xFFFFFFFF),
                       ),
-                      onPressed: _toggleConfirmPasswordVisibility,
                     ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(18),
-                      borderSide: BorderSide.none,
+                    const Text(
+                      'สร้างบัญชีใหม่สำหรับผู้ใช้ระบบของคุณ',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF6C6C6C),
+                        fontFamily: 'SukhumvitSet',
+                      ),
                     ),
-                  ),
-                  style: const TextStyle(
-                    fontFamily: 'SukhumvitSet',
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: Color(0xFFFFFFFF),
-                  ),
+                    const SizedBox(height: 20),
+                    ProfilePictureWidget(
+                      imageUrl: imageUrl,
+                      onImageChanged: handleImageChanged,
+                    ),
+                    const SizedBox(height: 20),
+                    TextField(
+                      controller: usernameCtl,
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: const Color(0xFF1D1D1F),
+                        hintText: 'ชื่อผู้ใช้',
+                        hintStyle: const TextStyle(
+                          fontFamily: 'SukhumvitSet',
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Color(0xFF7B7B7C),
+                        ),
+                        prefixIcon:
+                            const Icon(Icons.person, color: Colors.white),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(18),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      style: const TextStyle(
+                        fontFamily: 'SukhumvitSet',
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Color(0xFFFFFFFF),
+                      ),
+                    ),
+                    const SizedBox(height: 15),
+                    TextField(
+                      controller: fullnameCtl,
+                      keyboardType: TextInputType.name,
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: const Color(0xFF1D1D1F),
+                        hintText: 'ชื่อ-สกุล',
+                        hintStyle: const TextStyle(
+                          fontFamily: 'SukhumvitSet',
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Color(0xFF7B7B7C),
+                        ),
+                        prefixIcon:
+                            const Icon(Icons.person, color: Colors.white),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(18),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      style: const TextStyle(
+                        fontFamily: 'SukhumvitSet',
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Color(0xFFFFFFFF),
+                      ),
+                    ),
+                    const SizedBox(height: 15),
+                    TextField(
+                      controller: emailCtl,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: const Color(0xFF1D1D1F),
+                        hintText: 'อีเมล',
+                        hintStyle: const TextStyle(
+                          fontFamily: 'SukhumvitSet',
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Color(0xFF7B7B7C),
+                        ),
+                        prefixIcon:
+                            const Icon(Icons.email, color: Colors.white),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(18),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      style: const TextStyle(
+                        fontFamily: 'SukhumvitSet',
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Color(0xFFFFFFFF),
+                      ),
+                    ),
+                    const SizedBox(height: 15),
+                    TextField(
+                      controller: phoneCtl,
+                      keyboardType: TextInputType.phone,
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: const Color(0xFF1D1D1F),
+                        hintText: 'โทรศัพท์',
+                        hintStyle: const TextStyle(
+                          fontFamily: 'SukhumvitSet',
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Color(0xFF7B7B7C),
+                        ),
+                        prefixIcon:
+                            const Icon(Icons.phone_iphone, color: Colors.white),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(18),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      style: const TextStyle(
+                        fontFamily: 'SukhumvitSet',
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Color(0xFFFFFFFF),
+                      ),
+                    ),
+                    const SizedBox(height: 15),
+                    TextField(
+                      controller: addressCtl,
+                      keyboardType: TextInputType.name,
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: const Color(0xFF1D1D1F),
+                        hintText: 'ที่อยู่',
+                        hintStyle: const TextStyle(
+                          fontFamily: 'SukhumvitSet',
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Color(0xFF7B7B7C),
+                        ),
+                        prefixIcon:
+                            const Icon(Icons.home_rounded, color: Colors.white),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(18),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      style: const TextStyle(
+                        fontFamily: 'SukhumvitSet',
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Color(0xFFFFFFFF),
+                      ),
+                    ),
+                    const SizedBox(height: 15),
+                    TextField(
+                      controller: passwordCtl,
+                      keyboardType: TextInputType.visiblePassword,
+                      obscureText: _obscureText,
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: const Color(0xFF1D1D1F),
+                        hintText: 'รหัสผ่าน',
+                        hintStyle: const TextStyle(
+                          fontFamily: 'SukhumvitSet',
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Color(0xFF7B7B7C),
+                        ),
+                        prefixIcon: const Icon(Icons.lock, color: Colors.white),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscureText
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                            color: Colors.white,
+                          ),
+                          onPressed: _togglePasswordVisibility,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(18),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      style: const TextStyle(
+                        fontFamily: 'SukhumvitSet',
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Color(0xFFFFFFFF),
+                      ),
+                    ),
+                    const SizedBox(height: 15),
+                    TextField(
+                      keyboardType: TextInputType.visiblePassword,
+                      controller: confirmpasswordtCtl,
+                      obscureText: _obscureTextCF,
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: const Color(0xFF1D1D1F),
+                        hintText: 'ยืนยันรหัสผ่าน',
+                        hintStyle: const TextStyle(
+                          fontFamily: 'SukhumvitSet',
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Color(0xFF7B7B7C),
+                        ),
+                        prefixIcon: const Icon(Icons.lock, color: Colors.white),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscureTextCF
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                            color: Colors.white,
+                          ),
+                          onPressed: _toggleConfirmPasswordVisibility,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(18),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      style: const TextStyle(
+                        fontFamily: 'SukhumvitSet',
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Color(0xFFFFFFFF),
+                      ),
+                    ),
+                    const SizedBox(height: 15),
+                    ElevatedButton(
+                      onPressed: _Register,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFF92A47),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        minimumSize: const Size(double.infinity, 50),
+                      ),
+                      child: const Text(
+                        'ยืนยันการลงทะเบียน',
+                        style: TextStyle(
+                          fontFamily: 'SukhumvitSet',
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Color(0xFFFFFFFF),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 15),
-                ElevatedButton(
-                  onPressed: _Register,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFF92A47),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                    minimumSize: const Size(double.infinity, 50),
-                  ),
-                  child: const Text(
-                    'ยืนยันการลงทะเบียน',
-                    style: TextStyle(
-                      fontFamily: 'SukhumvitSet',
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: Color(0xFFFFFFFF),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -341,7 +379,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
       log('fullname: ${fullnameCtl.text}');
       log('email: ${emailCtl.text}');
       log('phone: ${phoneCtl.text}');
-      log('address: ${addresstCtl.text}');
+      log('address: ${addressCtl.text}');
       log('password: ${passwordCtl.text}');
       log('confrimpass: ${confirmpasswordtCtl.text}');
 
@@ -350,7 +388,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
           fullnameCtl.text.trim().isEmpty ||
           emailCtl.text.trim().isEmpty ||
           phoneCtl.text.trim().isEmpty ||
-          addresstCtl.text.trim().isEmpty ||
+          addressCtl.text.trim().isEmpty ||
           passwordCtl.text.trim().isEmpty ||
           confirmpasswordtCtl.text.trim().isEmpty) {
         overlayEntry.remove();
@@ -414,7 +452,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
         fullname: fullnameCtl.text.trim(),
         email: emailCtl.text.trim(),
         phone: phoneCtl.text.trim(),
-        address: addresstCtl.text.trim(),
+        address: addressCtl.text.trim(),
         password: passwordCtl.text.trim(),
         image_profile: imageUrl ?? '',
       );

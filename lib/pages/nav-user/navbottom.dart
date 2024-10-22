@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:runtod_app/pages/user/home/homeUser.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:runtod_app/pages/user/home/profileUser.dart';
 import 'package:runtod_app/pages/user/home/sendUser.dart';
 import 'package:runtod_app/pages/user/home/statusUser.dart';
 
@@ -40,9 +39,6 @@ class _NavBottomState extends State<NavBottom> {
           break;
         case 2:
           Get.to(() => StatususerPage());
-          break;
-        case 3:
-          Get.to(() => ProfileUserPage());
           break;
       }
     }
@@ -113,13 +109,6 @@ class _NavBottomState extends State<NavBottom> {
                     size: 30.0,
                   ),
                   label: 'สถานะสินค้า',
-                ),
-                const BottomNavigationBarItem(
-                  icon: Icon(
-                    Icons.person,
-                    size: 30.0,
-                  ),
-                  label: 'โปรไฟล์',
                 ),
               ],
             ),

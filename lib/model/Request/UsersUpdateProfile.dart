@@ -1,17 +1,19 @@
 // To parse this JSON data, do
 //
-//     final usersRegisterPostRequest = usersRegisterPostRequestFromJson(jsonString);
+//     final UsersUpdateProfilePutRequest = UsersUpdateProfilePutRequestFromJson(jsonString);
 
 import 'dart:convert';
 
-List<UsersRegisterPostRequest> usersRegisterPostRequestFromJson(String str) =>
-    List<UsersRegisterPostRequest>.from(
-        json.decode(str).map((x) => UsersRegisterPostRequest.fromJson(x)));
+List<UsersUpdateProfilePutRequest> usersUpdateProfilePutRequestFromJson(
+        String str) =>
+    List<UsersUpdateProfilePutRequest>.from(
+        json.decode(str).map((x) => UsersUpdateProfilePutRequest.fromJson(x)));
 
-String usersRegisterPostRequestToJson(List<UsersRegisterPostRequest> data) =>
+String usersUpdateProfilePutRequestToJson(
+        List<UsersUpdateProfilePutRequest> data) =>
     json.encode(List<dynamic>.from(data.map((x) => x.toJson())));
 
-class UsersRegisterPostRequest {
+class UsersUpdateProfilePutRequest {
   String fullname;
   String username;
   String email;
@@ -19,8 +21,9 @@ class UsersRegisterPostRequest {
   String password;
   String image_profile;
   String address;
+  int uid;
 
-  UsersRegisterPostRequest({
+  UsersUpdateProfilePutRequest({
     required this.fullname,
     required this.username,
     required this.email,
@@ -28,11 +31,11 @@ class UsersRegisterPostRequest {
     required this.password,
     required this.image_profile,
     required this.address,
-    int? uid,
+    required this.uid,
   });
 
-  factory UsersRegisterPostRequest.fromJson(Map<String, dynamic> json) =>
-      UsersRegisterPostRequest(
+  factory UsersUpdateProfilePutRequest.fromJson(Map<String, dynamic> json) =>
+      UsersUpdateProfilePutRequest(
         fullname: json["fullname"],
         username: json["username"],
         email: json["email"],
@@ -40,6 +43,7 @@ class UsersRegisterPostRequest {
         password: json["password"],
         image_profile: json["image_profile "],
         address: json["address"],
+        uid: json["uid"],
       );
 
   Map<String, dynamic> toJson() => {
@@ -50,5 +54,6 @@ class UsersRegisterPostRequest {
         "password": password,
         "image_profile": image_profile,
         "address": address,
+        "uid": uid,
       };
 }
