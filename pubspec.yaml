@@ -1,0 +1,68 @@
+name: runtod_app
+description: "A new Flutter project."
+
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.5.3
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  http: ^1.2.2
+  get: ^4.6.6
+  get_storage: ^2.1.1
+  firebase_core: ^3.6.0
+  image_picker: ^1.1.2
+  font_awesome_flutter: ^10.7.0
+  video_player: ^2.9.2
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
+  location: ^7.0.1
+  geocoding: ^3.0.0
+  geolocator: ^13.0.1
+  firebase_storage: ^12.3.4
+  camera: ^0.11.0+2
+  flutter_launcher_icons: ^0.13.1
+  path: ^1.9.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^4.0.0
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/zen.png"
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/
+    - assets/images/
+    - assets/video/delivery.mp4
+    - assets/icon/zen.png
+    - assets/gif/load.gif
+
+  fonts:
+    - family: SukhumvitSet
+      fonts:
+        - asset: assets/SukhumvitSet/SukhumvitSet-Thin.ttf
+          weight: 100
+        - asset: assets/SukhumvitSet/SukhumvitSet-Text.ttf
+          weight: 400
+        - asset: assets/SukhumvitSet/SukhumvitSet-SemiBold.ttf
+          weight: 600
+        - asset: assets/SukhumvitSet/SukhumvitSet-Medium.ttf
+          weight: 500
+        - asset: assets/SukhumvitSet/SukhumvitSet-Light.ttf
+          weight: 300
+        - asset: assets/SukhumvitSet/SukhumvitSet-Bold.ttf
+          weight: 700
