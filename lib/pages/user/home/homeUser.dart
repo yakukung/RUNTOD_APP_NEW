@@ -5,7 +5,9 @@ import 'package:get_storage/get_storage.dart';
 import 'package:runtod_app/model/Response/UsersLoginPostResponse.dart';
 import 'package:runtod_app/pages/intro.dart';
 import 'package:runtod_app/pages/nav-user/navbar.dart';
+import 'package:runtod_app/pages/user/home/sendUser.dart';
 import 'package:runtod_app/pages/user/home/set_receiving_address.dart';
+import 'package:runtod_app/pages/user/home/statusUser.dart';
 import 'package:runtod_app/sidebar/userSidebar.dart';
 import 'package:runtod_app/config/internal_config.dart';
 import 'package:http/http.dart' as http;
@@ -143,7 +145,9 @@ class _HomeUserPageState extends State<HomeUserPage> {
                       width: 160,
                       height: 160,
                       child: FilledButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          Get.to(() => SenduserPage());
+                        },
                         style: FilledButton.styleFrom(
                           backgroundColor: const Color(0xFF2E2E30),
                           shape: RoundedRectangleBorder(
@@ -185,7 +189,9 @@ class _HomeUserPageState extends State<HomeUserPage> {
                       width: 160,
                       height: 160,
                       child: FilledButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          Get.to(() => StatususerPage());
+                        },
                         style: FilledButton.styleFrom(
                           backgroundColor: const Color(0xFFFFD507),
                           shape: RoundedRectangleBorder(

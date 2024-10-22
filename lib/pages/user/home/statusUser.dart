@@ -30,6 +30,10 @@ class _StatususerPageState extends State<StatususerPage> {
 
   @override
   Widget build(BuildContext context) {
+    bool isPortrait =
+        MediaQuery.of(context).orientation == Orientation.portrait;
+    MediaQuery.of(context).size.height;
+    double customPadding = isPortrait ? 15.0 : 60.0;
     return Scaffold(
       backgroundColor: const Color(0xFF000000),
       key: _scaffoldKey,
@@ -52,6 +56,43 @@ class _StatususerPageState extends State<StatususerPage> {
             return const Center(child: Text('No data available'));
           }
         },
+      ),
+      body: SingleChildScrollView(
+        child: FutureBuilder<UsersLoginPostResponse>(
+          future: loadDataUser,
+          builder: (context, userSnapshot) {
+            if (!userSnapshot.hasData) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            final user = userSnapshot.data!;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding:
+                      EdgeInsets.only(left: customPadding, top: customPadding),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(user.fullname,
+                          style: const TextStyle(
+                              fontFamily: 'SukhumvitSet',
+                              fontWeight: FontWeight.bold,
+                              fontSize: 30,
+                              color: Color(0xFFFFFFFF))),
+                      const Text('สถานะการขนส่ง',
+                          style: TextStyle(
+                              fontFamily: 'SukhumvitSet',
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: Color(0xFF7B7B7C))),
+                    ],
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
       ),
       bottomNavigationBar: NavBottom(
         selectedIndex: 2,
