@@ -14,6 +14,7 @@ import 'package:path/path.dart' as path;
 import 'package:runtod_app/config/internal_config.dart';
 import 'package:runtod_app/pages/intro.dart';
 import 'package:runtod_app/pages/nav-user/navbar.dart';
+import 'package:runtod_app/pages/nav-user/riderNavbottom.dart';
 import 'package:runtod_app/sidebar/riderSidebar.dart';
 import 'package:runtod_app/widget/profilePictureWidget.dart';
 
@@ -427,8 +428,12 @@ class _RiderprofileState extends State<Riderprofile> {
                 ],
               ),
             ),
+            const SizedBox(height: 30),
           ],
         ),
+      ),
+      bottomNavigationBar: const Ridernavbottom(
+        selectedIndex: 2,
       ),
     );
   }
@@ -731,7 +736,7 @@ class _RiderprofileState extends State<Riderprofile> {
                     width: 80,
                     height: 6,
                     decoration: BoxDecoration(
-                      color: Color(0xFF4A4A4C),
+                      color: const Color(0xFF4A4A4C),
                       borderRadius: BorderRadius.circular(5),
                     ),
                   ),
@@ -762,7 +767,6 @@ class _RiderprofileState extends State<Riderprofile> {
                       TextButton(
                         onPressed: () {
                           Navigator.of(context).pop();
-                          overlayEntry.remove();
                         },
                         child: const Text(
                           'ยกเลิก',
