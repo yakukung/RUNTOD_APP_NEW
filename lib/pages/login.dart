@@ -249,13 +249,13 @@ class _LoginPageState extends State<LoginPage> {
             gs.write('uid', uid);
             gs.write('type', userType);
             log("UID written: $uid");
-            Get.to(() => HomeUserPage());
+            Get.to(() => const HomeUserPage());
           } else if (userType == 1) {
             GetStorage gs = GetStorage();
             gs.write('uid', uid);
             gs.write('type', userType);
             log("UID written: $uid");
-            Get.to(() => Riderhome());
+            Get.to(() => const Riderhome());
           } else {
             _showErrorDialog('ไม่สามารถกำหนดประเภทผู้ใช้ได้');
           }
@@ -321,7 +321,7 @@ class _LoginPageState extends State<LoginPage> {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: <Widget>[
                     const SizedBox(height: 10),
-                    AnimatedCheckmark(isSuccess: false),
+                    const AnimatedCheckmark(isSuccess: false),
                     const SizedBox(height: 10),
                     const Text(
                       ' เข้าสู่ระบบไม่สำเร็จ',

@@ -97,7 +97,7 @@ class _SetReceivingPageState extends State<SetReceivingPage> {
                     shape: BoxShape.circle,
                   ),
                   child: Transform.translate(
-                    offset: Offset(-1.0, 0.0),
+                    offset: const Offset(-1.0, 0.0),
                     child: IconButton(
                       icon: const Icon(Icons.arrow_back_ios_new_rounded,
                           color: Colors.white),
@@ -134,10 +134,9 @@ class _SetReceivingPageState extends State<SetReceivingPage> {
             right: 0,
             child: Container(
               padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: Color(0xFF1D1D1F),
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(45)),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(45)),
               ),
               child: Padding(
                 padding: const EdgeInsets.only(left: 5, right: 5, bottom: 50),
@@ -149,7 +148,7 @@ class _SetReceivingPageState extends State<SetReceivingPage> {
                       width: 80,
                       height: 6,
                       decoration: BoxDecoration(
-                        color: Color(0xFF4A4A4C),
+                        color: const Color(0xFF4A4A4C),
                         borderRadius: BorderRadius.circular(5),
                       ),
                     ),
@@ -295,7 +294,7 @@ class _SetReceivingPageState extends State<SetReceivingPage> {
     } catch (e) {
       print('Error clearing storage: $e');
     } finally {
-      Get.offAll(() => IntroPage());
+      Get.offAll(() => const IntroPage());
     }
   }
 
@@ -304,25 +303,25 @@ class _SetReceivingPageState extends State<SetReceivingPage> {
     var uid = gs.read('uid');
 
     if (uid != null) {
-      // แสดงป๊อปอัพเพื่อยืนยันการบันทึก
       bool confirm = await showDialog(
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
-            title: Text("ยืนยันการบันทึก"),
-            content: Text("คุณแน่ใจหรือว่าต้องการบันทึกที่อยู่รับสินค้า?"),
+            title: const Text("ยืนยันการบันทึก"),
+            content:
+                const Text("คุณแน่ใจหรือว่าต้องการบันทึกที่อยู่รับสินค้า?"),
             actions: <Widget>[
               TextButton(
                 onPressed: () {
                   Navigator.of(context).pop(false);
                 },
-                child: Text("ยกเลิก"),
+                child: const Text("ยกเลิก"),
               ),
               TextButton(
                 onPressed: () {
                   Navigator.of(context).pop(true);
                 },
-                child: Text("ยืนยัน"),
+                child: const Text("ยืนยัน"),
               ),
             ],
           );
@@ -343,9 +342,9 @@ class _SetReceivingPageState extends State<SetReceivingPage> {
               '',
               snackPosition: SnackPosition.TOP,
               backgroundColor: Colors.blue,
-              margin: EdgeInsets.all(30),
+              margin: const EdgeInsets.all(30),
               borderRadius: 20,
-              titleText: Text(
+              titleText: const Text(
                 'ที่อยู่รับสินค้าของคุณ',
                 style: TextStyle(
                   fontSize: 20,
@@ -356,7 +355,7 @@ class _SetReceivingPageState extends State<SetReceivingPage> {
               ),
               messageText: Text(
                 _address,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 12,
                   color: Color(0xFFFFFFFF),
                   fontWeight: FontWeight.bold,

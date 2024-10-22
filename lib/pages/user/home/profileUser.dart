@@ -30,6 +30,7 @@ class _ProfileUserPageState extends State<ProfileUserPage> {
   bool _obscureText = true;
   bool _obscureTextCF = true;
   String imageUrl = '';
+  String OldimageUrl = '';
   File? profileImage;
 
   TextEditingController usernameCtl = TextEditingController();
@@ -66,6 +67,8 @@ class _ProfileUserPageState extends State<ProfileUserPage> {
       addressCtl.text = user.address!;
       passwordCtl.text = user.password;
       confirmpasswordtCtl.text = user.password;
+      imageCtl.text = user.imageProfile!;
+      OldimageUrl = user.imageProfile!;
       return user;
     });
     usernameCtl.addListener(updateDisplayNames);
@@ -452,6 +455,7 @@ class _ProfileUserPageState extends State<ProfileUserPage> {
 
     if (response.statusCode == 200) {
       var responseData = jsonDecode(response.body);
+
       return UsersLoginPostResponse.fromJson(responseData);
     } else {
       await _clearStorageAndNavigate();
@@ -494,17 +498,6 @@ class _ProfileUserPageState extends State<ProfileUserPage> {
         return;
       }
 
-      // ตรวจสอบว่าภาพถูกเลือกหรือไม่ หากภาพจำเป็นต้องถูกอัปโหลด
-      if (profileImage == null) {
-        overlayEntry.remove();
-        showSnackbar(
-          'สร้างบัญชีไม่สำเร็จ!',
-          'กรุณาเลือกภาพโปรไฟล์',
-          backgroundColor: const Color(0xFFF92A47),
-        );
-        return;
-      }
-
       // ตรวจสอบว่าหมายเลขโทรศัพท์มีความยาว 10 หลัก
       if (phoneCtl.text.trim().length != 10) {
         overlayEntry.remove();
@@ -534,12 +527,16 @@ class _ProfileUserPageState extends State<ProfileUserPage> {
       if (profileImage != null) {
         String phone = phoneCtl.text.trim();
         imageUrl = await uploadImageToFirebase(phone, profileImage!);
+
         if (imageUrl == null) {
           overlayEntry.remove();
           showSnackbar('สร้างบัญชีไม่สำเร็จ!', 'ไม่สามารถอัปโหลดรูปภาพได้!');
           return;
         }
+      } else {
+        imageUrl = OldimageUrl;
       }
+
       GetStorage gs = GetStorage();
       int uid = gs.read('uid');
 
@@ -551,7 +548,7 @@ class _ProfileUserPageState extends State<ProfileUserPage> {
         phone: phoneCtl.text.trim(),
         address: addressCtl.text.trim(),
         password: passwordCtl.text.trim(),
-        image_profile: imageUrl ?? '',
+        image_profile: imageUrl,
       );
       log('Sending data: ${jsonEncode(data.toJson())}');
 
