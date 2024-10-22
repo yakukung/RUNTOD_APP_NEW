@@ -112,7 +112,7 @@ class Ridersidebar extends StatelessWidget {
                   text: 'หน้าหลัก',
                   page: 'home',
                   onTap: () {
-                    Get.to(() => Riderhome());
+                    Get.to(() => const Riderhome());
                   },
                 ),
                 const SizedBox(height: 10),
@@ -124,7 +124,7 @@ class Ridersidebar extends StatelessWidget {
                   page: 'profile',
                   onTap: () {
                     Navigator.of(context).pop();
-                    Get.to(() => Riderprofile());
+                    Get.to(() => const Riderprofile());
                   },
                 ),
                 const SizedBox(height: 10),
@@ -135,7 +135,7 @@ class Ridersidebar extends StatelessWidget {
                   text: 'รายการที่ส่ง',
                   page: 'send',
                   onTap: () {
-                    Get.to(() => Deliverylist());
+                    Get.to(() => const Deliverylist());
                   },
                   isTransformed: true,
                 ),
@@ -184,7 +184,7 @@ class Ridersidebar extends StatelessWidget {
             children: [
               if (isTransformed)
                 Transform.translate(
-                  offset: Offset(-4.0, 0.0),
+                  offset: const Offset(-4.0, 0.0),
                   child: Icon(
                     icon,
                     color: isSelected ? Colors.black : Colors.black,
@@ -309,7 +309,7 @@ class Ridersidebar extends StatelessWidget {
                         onPressed: () {
                           GetStorage gs = GetStorage();
                           gs.erase();
-                          Get.offAll(() => IntroPage());
+                          Get.offAll(() => const IntroPage());
                         },
                         child: const Text(
                           'ออกจากระบบ',
