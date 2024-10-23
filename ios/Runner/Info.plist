@@ -45,5 +45,23 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- เพิ่ม Permission สำหรับ Location -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>This app needs access to location when open to show your current location on map</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>This app needs access to location when in the background for navigation features</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>This app needs access to location when open and in the background for navigation features</string>
+	
+	<!-- เพิ่ม Permission สำหรับ Map -->
+	<key>io.flutter.embedded_views_preview</key>
+	<true/>
+	
+	<!-- เพิ่ม Permission สำหรับการเชื่อมต่อ Internet -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
 </dict>
 </plist>

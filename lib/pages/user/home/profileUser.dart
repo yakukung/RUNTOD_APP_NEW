@@ -426,6 +426,7 @@ class _ProfileUserPageState extends State<ProfileUserPage> {
                 ],
               ),
             ),
+            const SizedBox(height: 100),
           ],
         ),
       ),
