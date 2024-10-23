@@ -11,7 +11,7 @@ import 'package:runtod_app/pages/nav-user/navbar.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:runtod_app/pages/nav-user/riderNavbottom.dart';
-import 'package:runtod_app/pages/raider/home/ridermap.dart';
+import 'package:runtod_app/pages/raider/home/ridermapOne.dart';
 import 'package:runtod_app/sidebar/riderSidebar.dart';
 
 class Riderhome extends StatefulWidget {
@@ -23,9 +23,9 @@ class Riderhome extends StatefulWidget {
 
 class _RiderhomeState extends State<Riderhome> {
   late Future<UsersLoginPostResponse> loadDataUser;
-  late Future<OrdersGetData> loadDataOrders;
+  late Future<List<OrdersGetData>> loadDataOrders;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  late int order_id = 0; // หรือค่าเริ่มต้นที่คุณต้องการ
+  late int order_id = 0;
 
   @override
   void initState() {
@@ -38,8 +38,8 @@ class _RiderhomeState extends State<Riderhome> {
   Widget build(BuildContext context) {
     bool isPortrait =
         MediaQuery.of(context).orientation == Orientation.portrait;
-    MediaQuery.of(context).size.height;
     double customPadding = isPortrait ? 15.0 : 60.0;
+
     return Scaffold(
       backgroundColor: const Color(0xFF000000),
       key: _scaffoldKey,
@@ -98,195 +98,237 @@ class _RiderhomeState extends State<Riderhome> {
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
                               color: Color(0xFF7B7B7C))),
-                      FutureBuilder<OrdersGetData>(
+                      FutureBuilder<List<OrdersGetData>>(
                         future: loadDataOrders,
                         builder: (BuildContext context, orderSnapshot) {
-                          if (!orderSnapshot.hasData) {
+                          if (orderSnapshot.connectionState ==
+                              ConnectionState.waiting) {
                             return const Center(
                                 child: CircularProgressIndicator());
+                          } else if (orderSnapshot.hasError) {
+                            return Center(
+                                child: Text('Error: ${orderSnapshot.error}'));
+                          } else if (!orderSnapshot.hasData ||
+                              orderSnapshot.data!.isEmpty) {
+                            // เช็คกรณีที่ไม่มีข้อมูล
+                            return const Center(
+                                child: Text('ไม่มีออเดอร์ที่กำลังจัดส่ง',
+                                    style: TextStyle(
+                                        fontFamily: 'SukhumvitSet',
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                        color: Color(0xFF7B7B7C))));
                           }
-                          final order = orderSnapshot.data!;
-                          order_id = order.order_id;
-                          return Padding(
-                            padding: const EdgeInsets.only(top: 20),
-                            child: Column(
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
+                          final orders = orderSnapshot.data!;
+                          // นำเสนอข้อมูลทั้งหมดในรายการ
+                          return ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: orders.length,
+                            itemBuilder: (context, index) {
+                              final order = orders[index];
+                              order_id = order.order_id;
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 20),
+                                child: Column(
                                   children: [
-                                    Container(
-                                      width: 380,
-                                      decoration: const BoxDecoration(
-                                        color: Color(0xFF1D1D1F),
-                                        borderRadius: BorderRadius.all(
-                                            Radius.circular(
-                                                45)), // แก้ไขให้เป็น BorderRadius.all
-                                      ),
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(20),
-                                        child: Column(
-                                          children: [
-                                            Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Container(
+                                          width: 380,
+                                          decoration: const BoxDecoration(
+                                            color: Color(0xFF1D1D1F),
+                                            borderRadius: BorderRadius.all(
+                                                Radius.circular(45)),
+                                          ),
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(20),
+                                            child: Column(
                                               children: [
-                                                Text(
-                                                    'เลขพัสดุ ${order.order_id}',
-                                                    style: const TextStyle(
-                                                        fontFamily:
-                                                            'SukhumvitSet',
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                        fontSize: 16,
-                                                        color:
-                                                            Color(0xFF7B7B7C))),
-                                                Container(
-                                                  width: 120,
-                                                  height: 30,
-                                                  decoration:
-                                                      const BoxDecoration(
-                                                    color: Color(0xFFF92A47),
-                                                    borderRadius: BorderRadius
-                                                        .all(Radius.circular(
-                                                            45)), // แก้ไขให้เป็น BorderRadius.all
-                                                  ),
-                                                  child: Center(
-                                                    child: Text(
-                                                      order.status == 0
-                                                          ? 'รอไรเดอร์รับสินค้า'
-                                                          : '${order.status}', // เช็คค่าของ order.status
-                                                      style: const TextStyle(
-                                                        fontFamily:
-                                                            'SukhumvitSet',
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                        fontSize: 12,
-                                                        color:
-                                                            Color(0xFFFFFFFF),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 15),
-                                            Center(
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                      'ผู้ส่ง : ${order.sender_name}',
-                                                      style: const TextStyle(
-                                                          fontFamily:
-                                                              'SukhumvitSet',
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                          fontSize: 16,
-                                                          color: Color(
-                                                              0xFFFFFFFF))),
-                                                  const SizedBox(height: 2),
-                                                  Text(order.sender_address,
-                                                      style: const TextStyle(
-                                                          fontFamily:
-                                                              'SukhumvitSet',
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                          fontSize: 12,
-                                                          color: Color(
-                                                              0xFF7B7B7C))),
-                                                  const SizedBox(height: 10),
-                                                  const Icon(
-                                                    Icons
-                                                        .arrow_downward_rounded,
-                                                    size: 45,
-                                                  ),
-                                                  const SizedBox(height: 10),
-                                                  Text(
-                                                      'ผู้รับ : ${order.receiver_name}',
-                                                      style: const TextStyle(
-                                                          fontFamily:
-                                                              'SukhumvitSet',
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                          fontSize: 16,
-                                                          color: Color(
-                                                              0xFFFFFFFF))),
-                                                  const SizedBox(height: 2),
-                                                  Text(order.receiver_address,
-                                                      style: const TextStyle(
-                                                          fontFamily:
-                                                              'SukhumvitSet',
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                          fontSize: 12,
-                                                          color: Color(
-                                                              0xFF7B7B7C))),
-                                                  const SizedBox(height: 15),
-                                                  Row(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .spaceBetween,
-                                                    children: [
-                                                      Text(
-                                                        'จำนวน ${order.total_orders} รายการ',
+                                                Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
+                                                  children: [
+                                                    Text(
+                                                        'เลขพัสดุ ${order.order_id}',
                                                         style: const TextStyle(
-                                                          fontFamily:
-                                                              'SukhumvitSet',
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                          fontSize: 14,
-                                                          color:
-                                                              Color(0xFFFFFFFF),
-                                                        ),
-                                                      ),
-                                                      ElevatedButton(
-                                                        onPressed: _OrderDetail,
-                                                        style: ElevatedButton
-                                                            .styleFrom(
-                                                          backgroundColor:
-                                                              Colors.blue,
-                                                          shape:
-                                                              RoundedRectangleBorder(
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                                        18),
-                                                          ),
-                                                        ),
-                                                        child: const Text(
-                                                          'รายละเอียดเพิ่มเติม',
-                                                          style: TextStyle(
                                                             fontFamily:
                                                                 'SukhumvitSet',
                                                             fontWeight:
                                                                 FontWeight.bold,
-                                                            fontSize: 14,
+                                                            fontSize: 16,
+                                                            color: Color(
+                                                                0xFF7B7B7C))),
+                                                    Container(
+                                                      width: 120,
+                                                      height: 30,
+                                                      decoration:
+                                                          const BoxDecoration(
+                                                        color:
+                                                            Color(0xFFF92A47),
+                                                        borderRadius:
+                                                            BorderRadius.all(
+                                                                Radius.circular(
+                                                                    45)),
+                                                      ),
+                                                      child: Center(
+                                                        child: Text(
+                                                          order.status == 0
+                                                              ? 'รอไรเดอร์รับสินค้า'
+                                                              : '${order.status}', // เช็คค่าของ order.status
+                                                          style:
+                                                              const TextStyle(
+                                                            fontFamily:
+                                                                'SukhumvitSet',
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            fontSize: 12,
                                                             color: Color(
                                                                 0xFFFFFFFF),
                                                           ),
                                                         ),
                                                       ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                const SizedBox(height: 15),
+                                                Center(
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Text(
+                                                          'ผู้ส่ง : ${order.sender_name}',
+                                                          style: const TextStyle(
+                                                              fontFamily:
+                                                                  'SukhumvitSet',
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                              fontSize: 16,
+                                                              color: Color(
+                                                                  0xFFFFFFFF))),
+                                                      const SizedBox(height: 2),
+                                                      Text(order.sender_address,
+                                                          style: const TextStyle(
+                                                              fontFamily:
+                                                                  'SukhumvitSet',
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                              fontSize: 12,
+                                                              color: Color(
+                                                                  0xFF7B7B7C))),
+                                                      const SizedBox(
+                                                          height: 10),
+                                                      const Icon(
+                                                          Icons
+                                                              .arrow_downward_rounded,
+                                                          size: 45),
+                                                      const SizedBox(
+                                                          height: 10),
+                                                      Text(
+                                                          'ผู้รับ : ${order.receiver_name}',
+                                                          style: const TextStyle(
+                                                              fontFamily:
+                                                                  'SukhumvitSet',
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                              fontSize: 16,
+                                                              color: Color(
+                                                                  0xFFFFFFFF))),
+                                                      const SizedBox(height: 2),
+                                                      Text(
+                                                          order
+                                                              .receiver_address,
+                                                          style: const TextStyle(
+                                                              fontFamily:
+                                                                  'SukhumvitSet',
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                              fontSize: 12,
+                                                              color: Color(
+                                                                  0xFF7B7B7C))),
+                                                      const SizedBox(
+                                                          height: 15),
+                                                      Row(
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .spaceBetween,
+                                                        children: [
+                                                          Text(
+                                                            'จำนวน ${order.total_orders} รายการ',
+                                                            style:
+                                                                const TextStyle(
+                                                              fontFamily:
+                                                                  'SukhumvitSet',
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                              fontSize: 14,
+                                                              color: Color(
+                                                                  0xFFFFFFFF),
+                                                            ),
+                                                          ),
+                                                          ElevatedButton(
+                                                            onPressed: () =>
+                                                                _OrderDetail(order
+                                                                    .order_id), // แก้ไขตรงนี้
+                                                            style:
+                                                                ElevatedButton
+                                                                    .styleFrom(
+                                                              backgroundColor:
+                                                                  Colors.blue,
+                                                              shape:
+                                                                  RoundedRectangleBorder(
+                                                                borderRadius:
+                                                                    BorderRadius
+                                                                        .circular(
+                                                                            18),
+                                                              ),
+                                                            ),
+                                                            child: const Text(
+                                                              'รายละเอียดเพิ่มเติม',
+                                                              style: TextStyle(
+                                                                fontFamily:
+                                                                    'SukhumvitSet',
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                                fontSize: 14,
+                                                                color: Color(
+                                                                    0xFFFFFFFF),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
                                                     ],
                                                   ),
-                                                ],
-                                              ),
-                                            )
-                                          ],
+                                                )
+                                              ],
+                                            ),
+                                          ),
                                         ),
-                                      ),
-                                    ),
+                                      ],
+                                    )
                                   ],
-                                )
-                              ],
-                            ),
+                                ),
+                              );
+                            },
                           );
                         },
                       )
                     ],
                   ),
                 ),
+                const SizedBox(height: 30),
               ],
             );
           },
@@ -315,7 +357,7 @@ class _RiderhomeState extends State<Riderhome> {
     }
   }
 
-  Future<OrdersGetData> fetchOrdersData() async {
+  Future<List<OrdersGetData>> fetchOrdersData() async {
     final response = await http.get(
       Uri.parse('$API_ENDPOINT/rider/orders'),
       headers: {"Content-Type": "application/json; charset=utf-8"},
@@ -323,9 +365,15 @@ class _RiderhomeState extends State<Riderhome> {
 
     if (response.statusCode == 200) {
       var responseData = jsonDecode(response.body);
-      return OrdersGetData.fromJson(responseData);
+      if (responseData.isEmpty) {
+        return []; // คืนค่าเป็น list ว่าง
+      }
+
+      return List<OrdersGetData>.from(
+          responseData.map((order) => OrdersGetData.fromJson(order)));
+    } else if (response.statusCode == 404) {
+      return []; // คืนค่าเป็น list ว่าง
     } else {
-      await _clearStorageAndNavigate();
       throw Exception('Failed to load orders data: ${response.reasonPhrase}');
     }
   }
@@ -342,8 +390,8 @@ class _RiderhomeState extends State<Riderhome> {
     }
   }
 
-  Future<void> _OrderDetail() async {
-    log('ส่งค่าไป ${order_id}');
-    Get.to(() => const Ridermap(), arguments: order_id);
+  Future<void> _OrderDetail(int orderId) async {
+    log('ส่งค่าไป $orderId');
+    Get.to(() => const RidermapOne(), arguments: orderId);
   }
 }

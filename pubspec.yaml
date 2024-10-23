@@ -52,6 +52,7 @@ flutter:
     - assets/images/
     - assets/video/delivery.mp4
     - assets/icon/zen.png
+    - assets/icon/motorcycle.png
     - assets/gif/load.gif
 
   fonts:
