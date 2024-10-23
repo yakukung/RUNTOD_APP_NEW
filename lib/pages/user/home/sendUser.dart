@@ -6,6 +6,7 @@ import 'package:get_storage/get_storage.dart';
 import 'package:runtod_app/model/Response/UsersLoginPostResponse.dart';
 import 'package:http/http.dart' as http;
 import 'package:runtod_app/config/internal_config.dart';
+import 'package:runtod_app/model/Response/productGetResponse.dart';
 import 'package:runtod_app/pages/intro.dart';
 import 'package:runtod_app/pages/nav-user/navbar.dart';
 import 'package:runtod_app/pages/nav-user/navbottom.dart';
@@ -22,11 +23,14 @@ class SenduserPage extends StatefulWidget {
 class _SenduserPageState extends State<SenduserPage> {
   late Future<UsersLoginPostResponse> loadDataUser;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  late Future<List<ProductGetResponse>> loadProductData;
 
+  List<bool> selectedProducts = [];
   @override
   void initState() {
     super.initState();
     loadDataUser = fetchUserData();
+    loadProductData = fetchProductData();
   }
 
   @override
@@ -106,8 +110,7 @@ class _SenduserPageState extends State<SenduserPage> {
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(15),
                             ),
-                            minimumSize: const Size(double.minPositive,
-                                35), // ปรับขนาดให้พอดีกับปุ่ม
+                            minimumSize: const Size(double.minPositive, 35),
                           ),
                           child: const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -138,8 +141,7 @@ class _SenduserPageState extends State<SenduserPage> {
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(15),
                             ),
-                            minimumSize: const Size(double.minPositive,
-                                35), // ปรับขนาดให้พอดีกับปุ่ม
+                            minimumSize: const Size(double.minPositive, 35),
                           ),
                           child: const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -164,6 +166,87 @@ class _SenduserPageState extends State<SenduserPage> {
                     ],
                   ),
                 ),
+                // FutureBuilder for loading product data
+                FutureBuilder<List<ProductGetResponse>>(
+                  future: loadProductData,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    } else if (snapshot.hasError) {
+                      return Center(child: Text('Error: ${snapshot.error}'));
+                    } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                      return const Center(
+                          child: Text('No product data available'));
+                    }
+                    final productList = snapshot.data!;
+                    if (selectedProducts.length != productList.length) {
+                      selectedProducts =
+                          List<bool>.filled(productList.length, false);
+                    }
+                    return Column(
+                      children: [
+                        ...productList.map((product) {
+                          final index = productList.indexOf(product);
+                          return Card(
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.all(8.0), // เพิ่ม padding
+                              child: Row(
+                                children: [
+                                  Checkbox(
+                                    value: selectedProducts[index],
+                                    onChanged: (bool? value) {
+                                      setState(() {
+                                        selectedProducts[index] =
+                                            value ?? false;
+                                      });
+                                    },
+                                  ),
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(10), 
+                                    child: Image.network(
+                                      product.imageProduct,
+                                      width: 100, // ปรับขนาดของรูปภาพ
+                                      height: 100,
+                                      fit: BoxFit.cover,
+                                      
+                                    ),
+                                  ),
+                                  const SizedBox(
+                                      width:
+                                          8), // เพิ่มช่องว่างระหว่างรูปและข้อความ
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          product.nameItem,
+                                          style: const TextStyle(
+                                              color: Color.fromARGB(255, 255, 255, 255),
+                                              fontWeight: FontWeight.normal,fontSize: 20,),
+                                          maxLines: 2, // จำกัดจำนวนบรรทัด
+                                          overflow: TextOverflow
+                                              .ellipsis, // ถ้าเกินจะตัด
+                                        ),
+                                        Text(
+                                          product.detailItem,
+                                          style: const TextStyle(
+                                              color: Colors.grey),
+                                          maxLines: 4, // จำกัดจำนวนบรรทัด
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ],
+                    );
+                  },
+                ),
               ],
             );
           },
@@ -172,6 +255,30 @@ class _SenduserPageState extends State<SenduserPage> {
       bottomNavigationBar: NavBottom(
         selectedIndex: 1,
       ),
+    );
+  }
+
+  Future<List<ProductGetResponse>> fetchProductData() async {
+    GetStorage gs = GetStorage();
+    int? uid = gs.read('uid');
+
+    final response = await http.get(
+      Uri.parse('$API_ENDPOINT/user/orders/order_items/$uid'),
+      headers: {"Content-Type": "application/json; charset=utf-8"},
+    );
+
+    if (response.statusCode == 200) {
+      var responseData = jsonDecode(response.body);
+      return productGetResponseFromJson(responseData);
+    } else {
+      throw Exception('Failed to load product data: ${response.reasonPhrase}');
+    }
+  }
+
+  List<ProductGetResponse> productGetResponseFromJson(List<dynamic> json) {
+    return List<ProductGetResponse>.from(
+      json.map(
+          (item) => ProductGetResponse.fromJson(item as Map<String, dynamic>)),
     );
   }
 
