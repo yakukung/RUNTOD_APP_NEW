@@ -9,45 +9,37 @@ List<ProductGetResponse> productGetResponseFromJson(String str) => List<ProductG
 String productGetResponseToJson(List<ProductGetResponse> data) => json.encode(List<dynamic>.from(data.map((x) => x.toJson())));
 
 class ProductGetResponse {
-    int orderItemId;
-    int orderId;
-    String senderId;
-    String nameItem;
-    String detailItem;
+    int productId;
+    int senderId;
+    String nameProduct;
+    String detailProduct;
     String imageProduct;
-    String imageStatus;
     String createdDate;
 
     ProductGetResponse({
-        required this.orderItemId,
-        required this.orderId,
+        required this.productId,
         required this.senderId,
-        required this.nameItem,
-        required this.detailItem,
+        required this.nameProduct,
+        required this.detailProduct,
         required this.imageProduct,
-        required this.imageStatus,
         required this.createdDate,
     });
 
     factory ProductGetResponse.fromJson(Map<String, dynamic> json) => ProductGetResponse(
-        orderItemId: json["order_item_id"],
-        orderId: json["order_id"],
+        productId: json["product_id"],
         senderId: json["sender_id"],
-        nameItem: json["name_item"],
-        detailItem: json["detail_item"],
+        nameProduct: json["name_product"],
+        detailProduct: json["detail_product"],
         imageProduct: json["image_product"],
-        imageStatus: json["image_status"],
         createdDate: json["created_date"],
     );
 
     Map<String, dynamic> toJson() => {
-        "order_item_id": orderItemId,
-        "order_id": orderId,
+        "product_id": productId,
         "sender_id": senderId,
-        "name_item": nameItem,
-        "detail_item": detailItem,
+        "name_product": nameProduct,
+        "detail_product": detailProduct,
         "image_product": imageProduct,
-        "image_status": imageStatus,
         "created_date": createdDate,
     };
 }

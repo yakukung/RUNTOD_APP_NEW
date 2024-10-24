@@ -221,7 +221,7 @@ class _SenduserPageState extends State<SenduserPage> {
                                           CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          product.nameItem,
+                                          product.nameProduct,
                                           style: const TextStyle(
                                               color: Color.fromARGB(255, 255, 255, 255),
                                               fontWeight: FontWeight.normal,fontSize: 20,),
@@ -230,7 +230,7 @@ class _SenduserPageState extends State<SenduserPage> {
                                               .ellipsis, // ถ้าเกินจะตัด
                                         ),
                                         Text(
-                                          product.detailItem,
+                                          product.detailProduct,
                                           style: const TextStyle(
                                               color: Colors.grey),
                                           maxLines: 4, // จำกัดจำนวนบรรทัด
@@ -263,7 +263,7 @@ class _SenduserPageState extends State<SenduserPage> {
     int? uid = gs.read('uid');
 
     final response = await http.get(
-      Uri.parse('$API_ENDPOINT/user/orders/order_items/$uid'),
+      Uri.parse('$API_ENDPOINT/user/orders/products/$uid'),
       headers: {"Content-Type": "application/json; charset=utf-8"},
     );
 

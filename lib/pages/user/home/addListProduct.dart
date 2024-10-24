@@ -1,5 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui';
+import 'package:path/path.dart' as path;
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -8,7 +11,9 @@ import 'package:runtod_app/model/Response/UsersLoginPostResponse.dart';
 import 'package:http/http.dart' as http;
 import 'package:runtod_app/config/internal_config.dart';
 import 'package:runtod_app/pages/intro.dart';
-import 'package:runtod_app/pages/user/home/searchNumberUser.dart';
+import 'dart:developer';
+
+import 'package:runtod_app/pages/user/home/sendUser.dart';
 
 class Addproduct extends StatefulWidget {
   const Addproduct({super.key});
@@ -21,8 +26,13 @@ class _AddproductState extends State<Addproduct> {
   late Future<UsersLoginPostResponse> loadDataUser;
   final TextEditingController nameController = TextEditingController();
   final TextEditingController descriptionController = TextEditingController();
-  File? profileImage;
 
+  File? productImage;
+  File? imageStatus;
+  String imageUrlproduct = '';
+  String imageUrlStatus = '';
+  String phoneCtl1 = '';
+  final ImagePicker _picker = ImagePicker();
   @override
   void initState() {
     super.initState();
@@ -59,20 +69,13 @@ class _AddproductState extends State<Addproduct> {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(height: 20),
+                SizedBox(height: 100),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
+                    // GestureDetector for productImage
                     GestureDetector(
-                      onTap: () async {
-                        File? newImage = await _pickImage();
-                        if (newImage != null) {
-                          setState(() {
-                            profileImage = newImage;
-                          });
-                          print('New image selected: ${newImage.path}');
-                        }
-                      },
+                      onTap: () => _selectImageSource(context, true),
                       child: Container(
                         width: 150,
                         height: 150,
@@ -81,24 +84,28 @@ class _AddproductState extends State<Addproduct> {
                           border: Border.all(color: Colors.grey),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Center(
-                          child: Icon(
-                            Icons.add,
-                            size: 80,
-                            color: Colors.grey,
-                          ),
-                          
-                        ),
-                        
+                        child: productImage != null
+                            ? ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.file(
+                                  productImage!,
+                                  fit: BoxFit.cover,
+                                ),
+                              )
+                            : const Center(
+                                child: Icon(
+                                  Icons.add,
+                                  size: 80,
+                                  color: Colors.grey,
+                                ),
+                              ),
                       ),
                     ),
-                    const SizedBox(
-                        width: 10), // เพิ่มช่องว่างระหว่างรูปภาพกับฟิลด์ชื่อ
+                    const SizedBox(width: 10),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // ฟิลด์เก็บชื่อ
                           TextField(
                             controller: nameController,
                             decoration: const InputDecoration(
@@ -106,10 +113,7 @@ class _AddproductState extends State<Addproduct> {
                               border: OutlineInputBorder(),
                             ),
                           ),
-                          const SizedBox(
-                              height:
-                                  10), // เพิ่มระยะห่างระหว่างฟิลด์ชื่อและฟิลด์รายละเอียด
-                          // ฟิลด์เก็บรายละเอียด
+                          const SizedBox(height: 10),
                           TextField(
                             controller: descriptionController,
                             maxLines: 4,
@@ -123,91 +127,18 @@ class _AddproductState extends State<Addproduct> {
                     ),
                   ],
                 ),
-                SizedBox(height: 40),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    GestureDetector(
-                      onTap: () async {
-                        File? newImage = await _pickImage();
-                        if (newImage != null) {
-                          setState(() {
-                            profileImage = newImage;
-                          });
-                          print('New image selected: ${newImage.path}');
-                        }
-                      },
-                      child: Container(
-                        width: 300,
-                        height: 150,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          border: Border.all(color: Colors.grey),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Center(
-                          child: Text(
-                            'ภาพประกอบสถานะ',
-                            style: TextStyle(
-                              fontSize: 15, // ขนาดข้อความ
-                              color: Colors.grey,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 20),
-                const Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    SizedBox(width: 16),
-                    Text('ผู้รับ',
-                        style: TextStyle(
-                          fontSize: 30, // ขนาดข้อความ
-                          color: Color.fromARGB(255, 255, 255, 255),
-                        )),
-                  ],
-                ),
-                SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    GestureDetector(
-                      onTap: () {
-                        Get.to(() => Searchnumberuser());
-                      },
-                      child: Container(
-                        width: 300,
-                        height: 80,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          border: Border.all(color: Colors.grey),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Center(
-                          child: Icon(
-                            Icons.add,
-                            size: 80,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 20),
-                // ปุ่มบันทึกข้อมูล
+                SizedBox(height: 50),
                 Center(
                   child: ElevatedButton(
-                    onPressed: () {
-                      // เรียกฟังก์ชันเพื่อบันทึกข้อมูล
-                      _saveData();
+                    onPressed: () async {
+                      // เรียกฟังก์ชันบันทึกข้อมูลก่อน
+                      await _Save();
+
+                      // หลังจากบันทึกข้อมูลเสร็จแล้ว, ไปยังหน้า senduser โดยใช้ Get
+                      Get.to(SenduserPage()); // เปลี่ยนหน้าโดยใช้ Get.to()
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                          Colors.green, // กำหนดสีพื้นหลังเป็นสีเขียว
+                      backgroundColor: Colors.green,
                     ),
                     child: const Text('บันทึกข้อมูล'),
                   ),
@@ -221,29 +152,148 @@ class _AddproductState extends State<Addproduct> {
     );
   }
 
-// ฟังก์ชันสำหรับบันทึกข้อมูล
-  void _saveData() {
-    String name = nameController.text;
-    String description = descriptionController.text;
+  Future<File?> _pickImage(ImageSource source) async {
+    final pickedFile = await _picker.pickImage(source: source);
+    return pickedFile != null ? File(pickedFile.path) : null;
+  }
 
-    if (profileImage != null) {
-      // ในที่นี้คุณสามารถบันทึกข้อมูล name, description และ profileImage ตามที่ต้องการ
-      print('ชื่อสินค้า: $name');
-      print('รายละเอียดสินค้า: $description');
-      print('รูปภาพ: ${profileImage!.path}');
+  void _selectImageSource(BuildContext context, bool isProductImage) async {
+    final pickedSource = await showDialog<ImageSource>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Choose Image Source'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, ImageSource.camera),
+              child: Text('Camera'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, ImageSource.gallery),
+              child: Text('Gallery'),
+            ),
+          ],
+        );
+      },
+    );
 
-      // ตัวอย่างการบันทึกข้อมูลไปยังเซิร์ฟเวอร์หรือฐานข้อมูล
-      // await saveToDatabase(name, description, profileImage!);
+    if (pickedSource != null) {
+      File? newImage = await _pickImage(pickedSource);
+      if (newImage != null) {
+        setState(() {
+          if (isProductImage) {
+            productImage = newImage; // Set productImage
+          }
+        });
+        print('New image selected: ${newImage.path}');
+      }
+    }
+  }
 
-      // แสดงข้อความยืนยันว่าบันทึกสำเร็จ
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('บันทึกข้อมูลเรียบร้อยแล้ว')),
+  Future<String?> uploadImageToFirebase(String uid, File imageFile) async {
+    try {
+      // ตรวจสอบขนาดไฟล์
+      final int fileSizeInBytes = await imageFile.length();
+      if (fileSizeInBytes > 5 * 1024 * 1024) {
+        // จำกัดขนาด 5MB
+        debugPrint('File size too large: ${fileSizeInBytes / 1024 / 1024} MB');
+        return null;
+      }
+
+      // ตรวจสอบนามสกุลไฟล์
+      final String extension = path.extension(imageFile.path).toLowerCase();
+      if (!['.jpg', '.jpeg', '.png'].contains(extension)) {
+        debugPrint('Invalid file type: $extension');
+        return null;
+      }
+
+      final String fileName = DateTime.now().millisecondsSinceEpoch.toString();
+      final Reference firebaseStorageRef = FirebaseStorage.instance
+          .ref()
+          .child('product_images/$uid/$fileName'); // แก้ไขที่อยู่ให้เหมาะสม
+
+      final UploadTask uploadTask = firebaseStorageRef.putFile(imageFile);
+
+      uploadTask.snapshotEvents.listen((TaskSnapshot snapshot) {
+        debugPrint(
+            'Upload progress: ${snapshot.bytesTransferred}/${snapshot.totalBytes}');
+      }, onError: (e) {
+        debugPrint('Upload error: $e');
+      });
+
+      final TaskSnapshot taskSnapshot = await uploadTask;
+      final String downloadUrl = await taskSnapshot.ref.getDownloadURL();
+      debugPrint('Upload successful. Download URL: $downloadUrl');
+      return downloadUrl;
+    } catch (e) {
+      debugPrint('Error in uploadImageToFirebase: $e');
+      return null;
+    }
+  }
+
+  Future<void> _Save() async {
+    try {
+      if (nameController.text.trim().isEmpty ||
+          descriptionController.text.trim().isEmpty ||
+          productImage == null) {
+        showSnackbar('สร้างรายการไม่สำเร็จ!', 'กรุณาป้อนข้อมูลให้ครบทุกช่อง',
+            backgroundColor: const Color(0xFFF92A47));
+        return;
+      }
+
+      String? imageUrlproduct =
+          await uploadImageToFirebase(phoneCtl1, productImage!);
+      if (imageUrlproduct == null) {
+        showSnackbar(
+            'สร้างรายการไม่สำเร็จ!', 'ไม่สามารถอัปโหลดรูปภาพสินค้าได้!');
+        return;
+      }
+
+      // String? imageStatusUrl = await uploadImageToFirebase(phoneCtl1, imageStatus!);
+      // if (imageStatusUrl == null) {
+      //   showSnackbar('สร้างรายการไม่สำเร็จ!', 'ไม่สามารถอัปโหลดรูปภาพสถานะได้!');
+      //   return;
+      // }
+
+      GetStorage gs = GetStorage();
+      String senderId = gs.read('uid')?.toString() ?? '';
+      if (senderId.isEmpty) {
+        showSnackbar('เกิดข้อผิดพลาด!', 'ไม่พบ ID ผู้ส่ง');
+        return;
+      }
+
+      var data = {
+        "sender_id": senderId,
+        "name_product": nameController.text.trim(),
+        "detail_product": descriptionController.text.trim(),
+        "image_product": imageUrlproduct,
+      };
+
+      log('Sending data: ${jsonEncode(data)}');
+      var response = await http.post(
+        Uri.parse('$API_ENDPOINT/user/orders/products/$senderId'),
+        headers: {"Content-Type": "application/json; charset=utf-8"},
+        body: jsonEncode(data),
       );
-    } else {
-      // แสดงข้อความเตือนเมื่อไม่มีรูปภาพ
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('กรุณาเลือกภาพประกอบ')),
-      );
+
+      log('Status code: ${response.statusCode}');
+      log('Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        showSnackbar('สร้างรายการสำเร็จ!', 'ข้อมูลของคุณได้ถูกบันทึกแล้ว',
+            backgroundColor: Colors.blue);
+        setState(() {});
+      } else {
+        log('Error response: ${response.body}');
+        showSnackbar(
+            'สร้างรายการไม่สำเร็จ!', 'ไม่สามารถบันทึกข้อมูลได้ ลองใหม่อีกครั้ง',
+            backgroundColor: const Color(0xFFF92A47));
+      }
+    } catch (e) {
+      log('Error: $e');
+      showSnackbar(
+          'สร้างรายการไม่สำเร็จ!', 'ไม่สามารถบันทึกข้อมูลได้ ลองใหม่อีกครั้ง',
+          backgroundColor: const Color(0xFFF92A47));
     }
   }
 
@@ -258,11 +308,62 @@ class _AddproductState extends State<Addproduct> {
 
     if (response.statusCode == 200) {
       var responseData = jsonDecode(response.body);
-      return UsersLoginPostResponse.fromJson(responseData);
+      UsersLoginPostResponse userData =
+          UsersLoginPostResponse.fromJson(responseData);
+
+      // กำหนดค่าให้กับ phoneCtl1
+      phoneCtl1 = userData.phone;
+
+      return userData;
     } else {
       await _clearStorageAndNavigate();
       throw Exception('Failed to load user data: ${response.reasonPhrase}');
     }
+  }
+
+  OverlayEntry _createOverlayEntry() {
+    return OverlayEntry(
+      builder: (context) => Container(
+        color: Colors.black.withOpacity(0.7),
+        child: Center(
+          child: Image.asset(
+            'assets/gif/load.gif',
+            width: 150,
+            height: 150,
+          ),
+        ),
+      ),
+    );
+  }
+
+  void showSnackbar(String title, String message,
+      {Color backgroundColor = Colors.blue}) {
+    Get.snackbar(
+      '',
+      '',
+      titleText: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+          fontFamily: 'SukhumvitSet',
+        ),
+      ),
+      messageText: Text(
+        message,
+        style: const TextStyle(
+          fontSize: 16,
+          color: Colors.white,
+          fontWeight: FontWeight.w600,
+          fontFamily: 'SukhumvitSet',
+        ),
+      ),
+      snackPosition: SnackPosition.TOP,
+      backgroundColor: backgroundColor,
+      margin: const EdgeInsets.all(30),
+      borderRadius: 22,
+    );
   }
 
   Future<void> _clearStorageAndNavigate() async {
@@ -276,12 +377,12 @@ class _AddproductState extends State<Addproduct> {
     }
   }
 
-  Future<File?> _pickImage() async {
-    final pickedFile =
-        await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      return File(pickedFile.path);
-    }
-    return null;
-  }
+  // Future<File?> _pickImage() async {
+  //   final pickedFile =
+  //       await ImagePicker().pickImage(source: ImageSource.gallery);
+  //   if (pickedFile != null) {
+  //     return File(pickedFile.path);
+  //   }
+  //   return null;
+  // }
 }
