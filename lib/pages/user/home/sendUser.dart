@@ -203,13 +203,12 @@ class _SenduserPageState extends State<SenduserPage> {
                                     },
                                   ),
                                   ClipRRect(
-                                    borderRadius: BorderRadius.circular(10), 
+                                    borderRadius: BorderRadius.circular(10),
                                     child: Image.network(
                                       product.imageProduct,
                                       width: 100, // ปรับขนาดของรูปภาพ
                                       height: 100,
                                       fit: BoxFit.cover,
-                                      
                                     ),
                                   ),
                                   const SizedBox(
@@ -223,8 +222,11 @@ class _SenduserPageState extends State<SenduserPage> {
                                         Text(
                                           product.nameItem,
                                           style: const TextStyle(
-                                              color: Color.fromARGB(255, 255, 255, 255),
-                                              fontWeight: FontWeight.normal,fontSize: 20,),
+                                            color: Color.fromARGB(
+                                                255, 255, 255, 255),
+                                            fontWeight: FontWeight.normal,
+                                            fontSize: 20,
+                                          ),
                                           maxLines: 2, // จำกัดจำนวนบรรทัด
                                           overflow: TextOverflow
                                               .ellipsis, // ถ้าเกินจะตัด
@@ -269,9 +271,15 @@ class _SenduserPageState extends State<SenduserPage> {
 
     if (response.statusCode == 200) {
       var responseData = jsonDecode(response.body);
+
+      if (responseData.isEmpty) {
+        return [];
+      }
+
       return productGetResponseFromJson(responseData);
     } else {
-      throw Exception('Failed to load product data: ${response.reasonPhrase}');
+      print('Failed to load product data: ${response.reasonPhrase}');
+      return [];
     }
   }
 
