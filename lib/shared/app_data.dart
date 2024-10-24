@@ -10,4 +10,5 @@ class UserProfile {
   int uid = 0;
   int type = 0;
   String fullname = '';
+  String oid = '';
 }

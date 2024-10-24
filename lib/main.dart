@@ -4,6 +4,7 @@ import 'package:runtod_app/pages/intro.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:runtod_app/pages/raider/home/riderHome.dart';
+import 'package:runtod_app/pages/raider/home/ridermapTwo.dart';
 import 'package:runtod_app/pages/user/home/homeUser.dart';
 import 'firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -17,20 +18,22 @@ Future<void> main() async {
   final GetStorage storage = GetStorage();
   final int? uid = storage.read<int>('uid');
   final int? type = storage.read<int>('type');
+  final String? oid = storage.read<String>('oid');
 
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     systemNavigationBarColor: Colors.black,
     systemNavigationBarIconBrightness: Brightness.light,
   ));
 
-  runApp(MyApp(uid: uid, type: type));
+  runApp(MyApp(uid: uid, type: type, oid: oid));
 }
 
 class MyApp extends StatelessWidget {
   final int? uid;
   final int? type;
+  final String? oid;
 
-  const MyApp({super.key, this.uid, this.type});
+  const MyApp({super.key, this.uid, this.type, this.oid});
 
   @override
   Widget build(BuildContext context) {
@@ -59,7 +62,11 @@ class MyApp extends StatelessWidget {
         case 0:
           return HomeUserPage();
         case 1:
-          return Riderhome();
+          if (oid != null) {
+            return RidermapTwo();
+          } else {
+            return Riderhome();
+          }
         default:
           return const IntroPage();
       }
