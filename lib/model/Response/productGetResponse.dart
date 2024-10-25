@@ -4,9 +4,12 @@
 
 import 'dart:convert';
 
-List<ProductGetResponse> productGetResponseFromJson(String str) => List<ProductGetResponse>.from(json.decode(str).map((x) => ProductGetResponse.fromJson(x)));
+List<ProductGetResponse> productGetResponseFromJson(String str) =>
+    List<ProductGetResponse>.from(
+        json.decode(str).map((x) => ProductGetResponse.fromJson(x)));
 
-String productGetResponseToJson(List<ProductGetResponse> data) => json.encode(List<dynamic>.from(data.map((x) => x.toJson())));
+String productGetResponseToJson(List<ProductGetResponse> data) =>
+    json.encode(List<dynamic>.from(data.map((x) => x.toJson())));
 
 class ProductGetResponse {
     int productId;
@@ -32,7 +35,7 @@ class ProductGetResponse {
         detailProduct: json["detail_product"],
         imageProduct: json["image_product"],
         createdDate: json["created_date"],
-    );
+      );
 
     Map<String, dynamic> toJson() => {
         "product_id": productId,
@@ -41,5 +44,5 @@ class ProductGetResponse {
         "detail_product": detailProduct,
         "image_product": imageProduct,
         "created_date": createdDate,
-    };
+      };
 }

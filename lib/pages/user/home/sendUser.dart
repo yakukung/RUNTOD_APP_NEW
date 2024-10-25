@@ -134,7 +134,9 @@ class _SenduserPageState extends State<SenduserPage> {
                       SizedBox(width: customPadding),
                       SizedBox(
                         child: FilledButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            _confirmDelivery();
+                          },
                           style: FilledButton.styleFrom(
                             backgroundColor:
                                 const Color.fromARGB(255, 255, 0, 0),
@@ -256,6 +258,41 @@ class _SenduserPageState extends State<SenduserPage> {
         selectedIndex: 1,
       ),
     );
+  }
+
+ Future<void> _confirmDelivery() async {
+    GetStorage gs = GetStorage();
+    int? uid = gs.read('uid');
+    
+    final selectedProductIds = <int>[]; // เก็บ id สินค้าที่ถูกเลือก
+
+    final products = await loadProductData;
+    for (int i = 0; i < products.length; i++) {
+      if (selectedProducts[i]) {
+        selectedProductIds.add(products[i].productId);
+      }
+    }
+
+    if (selectedProductIds.isEmpty) {
+      Get.snackbar('Warning', 'Please select at least one product.');
+      return;
+    }
+
+    // ส่งข้อมูลสินค้าที่ถูกเลือกไปยัง API
+    final response = await http.post(
+      Uri.parse('$API_ENDPOINT/user/orders/confirm/$uid'),
+      headers: {"Content-Type": "application/json; charset=utf-8"},
+      body: jsonEncode({
+        'uid': uid,
+        'selected_product_ids': selectedProductIds,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      Get.snackbar('Success', 'Delivery confirmed successfully!');
+    } else {
+      Get.snackbar('Error', 'Failed to confirm delivery.');
+    }
   }
 
   Future<List<ProductGetResponse>> fetchProductData() async {

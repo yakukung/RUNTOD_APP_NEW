@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'dart:async';
 import 'dart:typed_data';
+import 'dart:developer' as dev;
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -31,6 +32,8 @@ class _RidermapTwoState extends State<RidermapTwo> {
   bool isLoading = true;
   bool isAtSender = false;
   bool isAtReceiver = false;
+  bool CFisAtSender = false;
+  bool CFisAtReceiver = false;
   late Stream<Position> positionStream;
   late StreamSubscription<Position> positionSubscription;
   late Future<OrdersGetData> orderData;
@@ -141,6 +144,7 @@ class _RidermapTwoState extends State<RidermapTwo> {
                       return const Center(child: CircularProgressIndicator());
                     }
                     final order_detail = orderSnapshot.data!;
+                    late int status = order_detail.status;
                     return DraggableScrollableSheet(
                         initialChildSize: 0.3,
                         minChildSize: 0.3,
@@ -185,8 +189,8 @@ class _RidermapTwoState extends State<RidermapTwo> {
                                         ),
                                         Container(
                                           decoration: BoxDecoration(
-                                            color: _getStatusColor(order_detail
-                                                .status), // เรียกใช้ฟังก์ชันเพื่อรับสีตามสถานะ
+                                            color: _getStatusColor(
+                                                order_detail.status),
                                             borderRadius:
                                                 const BorderRadius.all(
                                                     Radius.circular(45)),
@@ -209,25 +213,93 @@ class _RidermapTwoState extends State<RidermapTwo> {
                                         ),
                                       ],
                                     ),
-                                    // Text(
-                                    //   'สถานะ: ${isAtSender ? "ถึงจุดรับสินค้า" : isAtReceiver ? "ถึงจุดส่งสินค้า" : "กำลังเดินทาง"}',
-                                    //   style: const TextStyle(
-                                    //       fontWeight: FontWeight.bold),
-                                    // ),
                                     if (currentLocation != null &&
-                                        !isAtReceiver)
+                                        !CFisAtReceiver)
                                       Text(
-                                        'ระยะทางถึงจุด${isAtSender ? "ส่ง" : "รับ"}: ${Geolocator.distanceBetween(
+                                        'ระยะทางถึงจุด${CFisAtSender ? "ผู้รับ" : "ผู้ส่ง"}',
+                                        style: const TextStyle(
+                                          fontFamily: 'SukhumvitSet',
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                          color: Color(0xFF7B7B7C),
+                                        ),
+                                      ),
+                                    if (currentLocation != null &&
+                                        !CFisAtReceiver)
+                                      Text(
+                                        '${Geolocator.distanceBetween(
                                           currentLocation!.latitude,
                                           currentLocation!.longitude,
-                                          isAtSender
+                                          CFisAtSender
                                               ? receiverLocation!.latitude
                                               : senderLocation!.latitude,
-                                          isAtSender
+                                          CFisAtSender
                                               ? receiverLocation!.longitude
                                               : senderLocation!.longitude,
                                         ).toStringAsFixed(0)} เมตร',
+                                        style: const TextStyle(
+                                          fontFamily: 'SukhumvitSet',
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 28,
+                                          color: Color(0xFFFFFFFF),
+                                        ),
                                       ),
+                                    const SizedBox(height: 15),
+                                    Container(
+                                      child: Column(
+                                        children: [
+                                          if (isAtSender == false &&
+                                              CFisAtSender == false)
+                                            Column(
+                                              children: [
+                                                const Row(
+                                                  children: [
+                                                    Text(
+                                                      'ถ่ายภาพหลักฐานการรับส่งสินค้า',
+                                                      style: TextStyle(
+                                                        fontFamily:
+                                                            'SukhumvitSet',
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        fontSize: 14,
+                                                        color:
+                                                            Color(0xFFFFFFFF),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                ElevatedButton(
+                                                  onPressed: () {
+                                                    CFisAtSender = true;
+                                                  }, // แก้
+                                                  style:
+                                                      ElevatedButton.styleFrom(
+                                                    backgroundColor:
+                                                        Colors.blue,
+                                                    shape:
+                                                        RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              18),
+                                                    ),
+                                                  ),
+                                                  child: const Text(
+                                                    'คุณรับสินค้าจากผู้ส่งยัง',
+                                                    style: TextStyle(
+                                                      fontFamily:
+                                                          'SukhumvitSet',
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize: 14,
+                                                      color: Color(0xFFFFFFFF),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                        ],
+                                      ),
+                                    )
                                   ],
                                 ),
                               ),
@@ -351,7 +423,7 @@ class _RidermapTwoState extends State<RidermapTwo> {
         position.longitude,
       );
 
-      if (distance < 0) return; // Ignore small movements
+      if (distance < 0) return;
     }
     final ByteData data = await rootBundle
         .load('assets/icon/motorcycle.png'); // เปลี่ยนชื่อไฟล์ให้ตรง
@@ -428,13 +500,54 @@ class _RidermapTwoState extends State<RidermapTwo> {
     });
 
     if (!_dialogShown) {
+      dev.log('Entering the if condition', name: 'Snackbar Debug');
       if (isAtSender && !wasAtSender) {
         _dialogShown = true;
-        _showDestinationReachedDialog('คุณมาถึงจุดรับสินค้าแล้ว');
       } else if (isAtReceiver && !wasAtReceiver) {
         _dialogShown = true;
-        _showDestinationReachedDialog('คุณมาถึงจุดส่งสินค้าแล้ว');
       }
+      if (isAtSender == true) {
+        _showDestinationReachedDialog('แจ้งเตือน!!', 'คุณมาถึงจุดรับสินค้าแล้ว',
+            backgroundColor: Colors.blue);
+      }
+      if (isAtReceiver == true) {
+        _showDestinationReachedDialog('แจ้งเตือน!!', 'คุณมาถึงจุดส่งสินค้าแล้ว',
+            backgroundColor: Colors.blue);
+      }
+    }
+  }
+
+  void _showDestinationReachedDialog(String title, String message,
+      {Color backgroundColor = Colors.blue}) {
+    if (!mounted) return;
+
+    {
+      Get.snackbar(
+        '',
+        '',
+        titleText: Text(
+          title,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+            fontFamily: 'SukhumvitSet',
+          ),
+        ),
+        messageText: Text(
+          message,
+          style: const TextStyle(
+            fontSize: 16,
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+            fontFamily: 'SukhumvitSet',
+          ),
+        ),
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: backgroundColor,
+        margin: const EdgeInsets.all(30),
+        borderRadius: 22,
+      );
     }
   }
 
@@ -499,28 +612,12 @@ class _RidermapTwoState extends State<RidermapTwo> {
     return points;
   }
 
-  void _showDestinationReachedDialog(String message) {
-    if (!mounted) return;
-
-    Get.snackbar(
-      'แจ้งเตือน',
-      message,
-      backgroundColor: Colors.white,
-      colorText: Colors.black,
-      duration: const Duration(seconds: 3),
-      snackPosition: SnackPosition.TOP,
-      margin: const EdgeInsets.all(16),
-      borderRadius: 8,
-      onTap: (_) => _dialogShown = false, // Reset dialog flag when tapped
-    );
-  }
-
   Future<OrdersGetData> fetchOrderData(int orderId) async {
     try {
       final response = await http.get(
         Uri.parse('$API_ENDPOINT/rider/orders/$orderId'),
         headers: {"Content-Type": "application/json; charset=utf-8"},
-      ).timeout(const Duration(seconds: 10)); // Added timeout
+      ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         return OrdersGetData.fromJson(jsonDecode(response.body));
@@ -528,7 +625,7 @@ class _RidermapTwoState extends State<RidermapTwo> {
       throw Exception('Failed to load order data: ${response.statusCode}');
     } catch (e) {
       print('Error fetching order data: $e');
-      rethrow; // Rethrow to handle in _initializeLocations
+      rethrow;
     }
   }
 
@@ -592,7 +689,7 @@ class _RidermapTwoState extends State<RidermapTwo> {
               icon: BitmapDescriptor.defaultMarkerWithHue(
                   BitmapDescriptor.hueBlue),
               infoWindow: InfoWindow(
-                title: 'จุดรับสินค้า',
+                title: 'ผู้ส่ง: ${orders.sender_name}',
                 snippet: orders.sender_address,
               ),
             ));
@@ -605,7 +702,7 @@ class _RidermapTwoState extends State<RidermapTwo> {
               icon: BitmapDescriptor.defaultMarkerWithHue(
                   BitmapDescriptor.hueRed),
               infoWindow: InfoWindow(
-                title: 'จุดส่งสินค้า',
+                title: 'ผู้รับ: ${orders.receiver_name}',
                 snippet: orders.receiver_address,
               ),
             ));
@@ -614,7 +711,6 @@ class _RidermapTwoState extends State<RidermapTwo> {
           isLoading = false;
         });
 
-        // Update camera position after markers are added
         if (mapController != null) {
           _updateCameraPosition();
         }
