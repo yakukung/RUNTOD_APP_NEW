@@ -13,6 +13,7 @@ import 'dart:convert';
 
 import 'package:runtod_app/pages/nav-user/navbar.dart';
 import 'package:runtod_app/pages/nav-user/riderNavbottom.dart';
+import 'package:runtod_app/pages/raider/home/deliveryListMap.dart';
 import 'package:runtod_app/pages/raider/home/ridermapTwo.dart';
 import 'package:runtod_app/sidebar/riderSidebar.dart';
 
@@ -24,6 +25,7 @@ class Deliverylist extends StatefulWidget {
 }
 
 class _DeliverylistState extends State<Deliverylist> {
+  GetStorage gs = GetStorage();
   late Future<UsersLoginPostResponse> loadDataUser;
   late Future<List<OrdersGetData>> loadDataOrders;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
@@ -253,34 +255,66 @@ class _DeliverylistState extends State<Deliverylist> {
                                                             Color(0xFFFFFFFF),
                                                       ),
                                                     ),
-                                                    ElevatedButton(
-                                                      onPressed: () =>
-                                                          _OrderDetail(order
-                                                              .order_id), // แก้
-                                                      style: ElevatedButton
-                                                          .styleFrom(
-                                                        backgroundColor:
-                                                            Colors.blue,
-                                                        shape:
-                                                            RoundedRectangleBorder(
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(18),
+                                                    if (order.status != 3)
+                                                      ElevatedButton(
+                                                        onPressed: () =>
+                                                            _RiderMapTwo(
+                                                                order.order_id),
+                                                        style: ElevatedButton
+                                                            .styleFrom(
+                                                          backgroundColor:
+                                                              Colors.blue,
+                                                          shape:
+                                                              RoundedRectangleBorder(
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        18),
+                                                          ),
+                                                        ),
+                                                        child: const Text(
+                                                          'รายละเอียดเพิ่มเติม',
+                                                          style: TextStyle(
+                                                            fontFamily:
+                                                                'SukhumvitSet',
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            fontSize: 14,
+                                                            color: Color(
+                                                                0xFFFFFFFF),
+                                                          ),
                                                         ),
                                                       ),
-                                                      child: const Text(
-                                                        'รายละเอียดเพิ่มเติม',
-                                                        style: TextStyle(
-                                                          fontFamily:
-                                                              'SukhumvitSet',
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                          fontSize: 14,
-                                                          color:
-                                                              Color(0xFFFFFFFF),
+                                                    if (order.status == 3)
+                                                      ElevatedButton(
+                                                        onPressed: () =>
+                                                            _OrderDetail(
+                                                                order.order_id),
+                                                        style: ElevatedButton
+                                                            .styleFrom(
+                                                          backgroundColor:
+                                                              Colors.blue,
+                                                          shape:
+                                                              RoundedRectangleBorder(
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        18),
+                                                          ),
+                                                        ),
+                                                        child: const Text(
+                                                          'รายละเอียดเพิ่มเติม',
+                                                          style: TextStyle(
+                                                            fontFamily:
+                                                                'SukhumvitSet',
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            fontSize: 14,
+                                                            color: Color(
+                                                                0xFFFFFFFF),
+                                                          ),
                                                         ),
                                                       ),
-                                                    ),
                                                   ],
                                                 ),
                                               ],
@@ -352,7 +386,7 @@ class _DeliverylistState extends State<Deliverylist> {
     if (response.statusCode == 200) {
       var responseData = jsonDecode(response.body);
       if (responseData.isEmpty) {
-        return []; // คืนค่าเป็น list ว่าง
+        return [];
       }
 
       return List<OrdersGetData>.from(
@@ -393,8 +427,13 @@ class _DeliverylistState extends State<Deliverylist> {
     }
   }
 
+  Future<void> _RiderMapTwo(int orderId) async {
+    gs.write('oid', orderId.toString());
+    Get.to(() => const RidermapTwo());
+  }
+
   Future<void> _OrderDetail(int orderId) async {
     log('ส่งค่าไป $orderId');
-    Get.to(() => const RidermapTwo(), arguments: orderId);
+    Get.to(() => const DeliveryListMap(), arguments: orderId);
   }
 }

@@ -1,7 +1,10 @@
+import 'dart:io';
 import 'dart:math';
 import 'dart:async';
 import 'dart:typed_data';
 import 'dart:developer' as dev;
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:path/path.dart' as path;
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -14,8 +17,10 @@ import 'dart:convert';
 import 'package:geolocator/geolocator.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:runtod_app/config/internal_config.dart';
+import 'package:runtod_app/model/Response/imageStatusGetResponse.dart';
 import 'package:runtod_app/model/Response/ordersGetResponse.dart';
-import 'package:runtod_app/pages/raider/home/deliveryList.dart';
+import 'package:runtod_app/pages/raider/home/riderHome.dart';
+import 'package:runtod_app/widget/statusPictureWiget.dart';
 
 class RidermapTwo extends StatefulWidget {
   const RidermapTwo({super.key});
@@ -25,9 +30,10 @@ class RidermapTwo extends StatefulWidget {
 }
 
 class _RidermapTwoState extends State<RidermapTwo> {
+  late Future<ImageStatusGetResponse?> loadDataStatus;
   GoogleMapController? mapController;
-  final Set<Marker> markers = {}; // Changed to final
-  final Set<Polyline> polylines = {}; // Changed to final
+  final Set<Marker> markers = {};
+  final Set<Polyline> polylines = {};
   LatLng? senderLocation, receiverLocation, currentLocation;
   bool isLoading = true;
   bool isAtSender = false;
@@ -40,6 +46,11 @@ class _RidermapTwoState extends State<RidermapTwo> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   String? orderId;
   bool _dialogShown = false;
+  File? statusImage;
+  String imageUrl = '';
+  double initialChildSize = 0.3;
+  double minChildSize = 0.3;
+  double maxChildSize = 0.8;
 
   final String googleMapsApiKey = 'AIzaSyCAcu7KNBNl-YiZ9YsZiZ6jpQQYmdXwjYU';
 
@@ -51,17 +62,96 @@ class _RidermapTwoState extends State<RidermapTwo> {
     {"featureType": "transit", "elementType": "geometry", "stylers": [{"color": "#e9e9e9"}, {"lightness": 19}]}
   ]''';
 
+  void handleImageChanged(File image) {
+    setState(() {
+      statusImage = image;
+    });
+  }
+
   @override
   void initState() {
     super.initState();
-    orderId = Get.arguments?.toString();
+    orderId = GetStorage().read<String>('oid');
+    loadDataStatus = fetchStatusData();
+
     if (orderId == null) {
-      Get.snackbar('Error', 'Order ID is required');
+      Get.snackbar(
+        'Error',
+        'Order ID is required',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
       return;
     }
-    orderData = fetchOrderData(int.parse(orderId!));
-    _initializeLocations();
-    _initializeLocationTracking();
+
+    // เริ่มต้นโหลดข้อมูล
+    _loadAllData();
+  }
+
+// ฟังก์ชันสำหรับโหลดข้อมูลทั้งหมด
+  Future<void> _loadAllData() async {
+    int retryCount = 0;
+    const maxRetries = 3; // จำนวนครั้งสูงสุดที่จะลองใหม่
+    const retryDelay = Duration(seconds: 3); // ระยะเวลารอระหว่างการลองใหม่
+
+    while (retryCount < maxRetries) {
+      try {
+        setState(() {
+          isLoading = true;
+        });
+
+        // โหลดข้อมูล order
+        orderData = fetchOrderData(orderId);
+        final orders = await orderData;
+
+        // ตรวจสอบข้อมูลที่จำเป็น
+        if (orders.sender_address == null ||
+            orders.receiver_address == null ||
+            orders.sender_address.isEmpty ||
+            orders.receiver_address.isEmpty) {
+          throw Exception('Missing address information');
+        }
+
+        // เริ่มการติดตามตำแหน่ง
+        await _initializeLocationTracking();
+
+        // เริ่มการโหลดตำแหน่ง
+        await _initializeLocations();
+
+        // ถ้าทุกอย่างสำเร็จ ออกจาก loop
+        break;
+      } catch (e) {
+        print('Error loading data (attempt ${retryCount + 1}): $e');
+        retryCount++;
+
+        if (retryCount < maxRetries) {
+          // แสดง snackbar ว่ากำลังจะลองใหม่
+          if (mounted) {
+            Get.snackbar(
+              'Loading Error',
+              'Retrying in ${retryDelay.inSeconds} seconds... (Attempt ${retryCount + 1}/$maxRetries)',
+              backgroundColor: Colors.orange,
+              colorText: Colors.white,
+              duration: retryDelay,
+            );
+          }
+
+          // รอก่อนที่จะลองใหม่
+          await Future.delayed(retryDelay);
+        } else {
+          // ถ้าลองครบจำนวนครั้งแล้วยังไม่สำเร็จ
+          if (mounted) {
+            Get.snackbar(
+              'Error',
+              'Failed to load data after $maxRetries attempts. Please try again later.',
+              backgroundColor: Colors.red,
+              colorText: Colors.white,
+              duration: const Duration(seconds: 5),
+            );
+          }
+        }
+      }
+    }
   }
 
   @override
@@ -113,8 +203,7 @@ class _RidermapTwoState extends State<RidermapTwo> {
             else
               GoogleMap(
                 initialCameraPosition: CameraPosition(
-                  target: senderLocation ??
-                      const LatLng(13.7563, 100.5018), // Default to Bangkok
+                  target: senderLocation ?? const LatLng(13.7563, 100.5018),
                   zoom: 14,
                 ),
                 onMapCreated: (GoogleMapController controller) {
@@ -132,8 +221,6 @@ class _RidermapTwoState extends State<RidermapTwo> {
                 onTap: (_) => _dialogShown =
                     false, // Reset dialog flag when map is tapped
               ),
-
-            // Status indicator
             if (!isLoading &&
                 senderLocation != null &&
                 receiverLocation != null)
@@ -146,9 +233,9 @@ class _RidermapTwoState extends State<RidermapTwo> {
                     final order_detail = orderSnapshot.data!;
                     late int status = order_detail.status;
                     return DraggableScrollableSheet(
-                        initialChildSize: 0.3,
-                        minChildSize: 0.3,
-                        maxChildSize: 0.8,
+                        initialChildSize: initialChildSize,
+                        minChildSize: minChildSize,
+                        maxChildSize: maxChildSize,
                         builder: (BuildContext context,
                             ScrollController scrollController) {
                           return Container(
@@ -199,8 +286,8 @@ class _RidermapTwoState extends State<RidermapTwo> {
                                             padding: const EdgeInsets.all(10),
                                             child: Center(
                                               child: Text(
-                                                _getStatusMessage(order_detail
-                                                    .status), // เรียกใช้ฟังก์ชันเพื่อรับข้อความตามสถานะ
+                                                _getStatusMessage(
+                                                    order_detail.status),
                                                 style: const TextStyle(
                                                   fontFamily: 'SukhumvitSet',
                                                   fontWeight: FontWeight.bold,
@@ -213,65 +300,449 @@ class _RidermapTwoState extends State<RidermapTwo> {
                                         ),
                                       ],
                                     ),
-                                    if (currentLocation != null &&
-                                        !CFisAtReceiver)
-                                      Text(
-                                        'ระยะทางถึงจุด${CFisAtSender ? "ผู้รับ" : "ผู้ส่ง"}',
-                                        style: const TextStyle(
-                                          fontFamily: 'SukhumvitSet',
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16,
-                                          color: Color(0xFF7B7B7C),
-                                        ),
-                                      ),
-                                    if (currentLocation != null &&
-                                        !CFisAtReceiver)
-                                      Text(
-                                        '${Geolocator.distanceBetween(
-                                          currentLocation!.latitude,
-                                          currentLocation!.longitude,
-                                          CFisAtSender
-                                              ? receiverLocation!.latitude
-                                              : senderLocation!.latitude,
-                                          CFisAtSender
-                                              ? receiverLocation!.longitude
-                                              : senderLocation!.longitude,
-                                        ).toStringAsFixed(0)} เมตร',
-                                        style: const TextStyle(
-                                          fontFamily: 'SukhumvitSet',
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 28,
-                                          color: Color(0xFFFFFFFF),
-                                        ),
-                                      ),
-                                    const SizedBox(height: 15),
-                                    Container(
-                                      child: Column(
+                                    if (status == 1)
+                                      Column(
                                         children: [
-                                          if (isAtSender == false &&
-                                              CFisAtSender == false)
+                                          const Text(
+                                            'ระยะทางถึงจุดผู้ส่ง',
+                                            style: TextStyle(
+                                              fontFamily: 'SukhumvitSet',
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 16,
+                                              color: Color(0xFF7B7B7C),
+                                            ),
+                                          ),
+                                          Text(
+                                            '${Geolocator.distanceBetween(
+                                              currentLocation!.latitude,
+                                              currentLocation!.longitude,
+                                              senderLocation!.latitude,
+                                              senderLocation!.longitude,
+                                            ).toStringAsFixed(0)} เมตร',
+                                            style: const TextStyle(
+                                              fontFamily: 'SukhumvitSet',
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 28,
+                                              color: Color(0xFFFFFFFF),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 15),
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceEvenly,
+                                            children: [
+                                              Column(
+                                                children: [
+                                                  const Text(
+                                                    'ผู้ส่ง',
+                                                    style: TextStyle(
+                                                      fontFamily:
+                                                          'SukhumvitSet',
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize: 14,
+                                                      color: Color(0xFF7B7B7C),
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    order_detail.sender_name,
+                                                    style: const TextStyle(
+                                                      fontFamily:
+                                                          'SukhumvitSet',
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize: 14,
+                                                      color: Color(0xFFFFFFFF),
+                                                    ),
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    maxLines: 1,
+                                                  ),
+                                                ],
+                                              ),
+                                              const SizedBox(width: 10),
+                                              const Icon(
+                                                  Icons.arrow_forward_rounded,
+                                                  size: 45),
+                                              const SizedBox(width: 10),
+                                              Column(
+                                                children: [
+                                                  const Text(
+                                                    'ผู้รับ',
+                                                    style: TextStyle(
+                                                      fontFamily:
+                                                          'SukhumvitSet',
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize: 14,
+                                                      color: Color(0xFF7B7B7C),
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    order_detail.receiver_name,
+                                                    style: const TextStyle(
+                                                      fontFamily:
+                                                          'SukhumvitSet',
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize: 14,
+                                                      color: Color(0xFFFFFFFF),
+                                                    ),
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    maxLines: 1,
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 15),
+                                          if (isAtSender == true)
                                             Column(
                                               children: [
-                                                const Row(
+                                                Column(
                                                   children: [
-                                                    Text(
-                                                      'ถ่ายภาพหลักฐานการรับส่งสินค้า',
-                                                      style: TextStyle(
-                                                        fontFamily:
-                                                            'SukhumvitSet',
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                        fontSize: 14,
-                                                        color:
-                                                            Color(0xFFFFFFFF),
+                                                    const Row(
+                                                      children: [
+                                                        Text(
+                                                          'กรุณาถ่ายภาพหลักฐานการรับสินค้าจากผู้ส่ง',
+                                                          style: TextStyle(
+                                                            fontFamily:
+                                                                'SukhumvitSet',
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            fontSize: 14,
+                                                            color: Color(
+                                                                0xFFFFFFFF),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    const SizedBox(height: 15),
+                                                    FutureBuilder<
+                                                        ImageStatusGetResponse?>(
+                                                      future: loadDataStatus,
+                                                      builder:
+                                                          (context, snapshot) {
+                                                        if (snapshot
+                                                                .connectionState ==
+                                                            ConnectionState
+                                                                .waiting) {
+                                                          return const Center(
+                                                              child:
+                                                                  CircularProgressIndicator());
+                                                        } else if (snapshot
+                                                            .hasError) {
+                                                          return Text(
+                                                              'Error: ${snapshot.error}');
+                                                        } else if (snapshot
+                                                            .hasData) {
+                                                          final imageUrl =
+                                                              snapshot.data
+                                                                  ?.image_status;
+                                                          if (imageUrl !=
+                                                                  null &&
+                                                              imageUrl
+                                                                  .isNotEmpty) {
+                                                            return StatusPictureWidget(
+                                                              imageUrl:
+                                                                  imageUrl,
+                                                              onImageChanged:
+                                                                  (File
+                                                                      newImage) {
+                                                                statusImage =
+                                                                    newImage;
+                                                                dev.log(
+                                                                    'New image selected: ${newImage.path}');
+                                                              },
+                                                            );
+                                                          } else {
+                                                            return const Text(
+                                                                'No image available');
+                                                          }
+                                                        } else {
+                                                          return StatusPictureWidget(
+                                                            imageUrl: imageUrl,
+                                                            onImageChanged:
+                                                                (File
+                                                                    newImage) {
+                                                              statusImage =
+                                                                  newImage;
+                                                              dev.log(
+                                                                  'New image selected: ${newImage.path}');
+                                                            },
+                                                          );
+                                                        }
+                                                      },
+                                                    ),
+                                                    const SizedBox(height: 15),
+                                                    ElevatedButton(
+                                                      onPressed: _saveStatusOne,
+                                                      style: ElevatedButton
+                                                          .styleFrom(
+                                                        backgroundColor:
+                                                            Colors.blue,
+                                                        shape:
+                                                            RoundedRectangleBorder(
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(18),
+                                                        ),
+                                                      ),
+                                                      child: const Text(
+                                                        'เริ่มการส่งสินค้า',
+                                                        style: TextStyle(
+                                                          fontFamily:
+                                                              'SukhumvitSet',
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          fontSize: 14,
+                                                          color:
+                                                              Color(0xFFFFFFFF),
+                                                        ),
                                                       ),
                                                     ),
                                                   ],
                                                 ),
+                                              ],
+                                            )
+                                        ],
+                                      ),
+                                    if (status == 2)
+                                      Column(
+                                        children: [
+                                          const Text(
+                                            'ระยะทางถึงจุดผู้รับ',
+                                            style: TextStyle(
+                                              fontFamily: 'SukhumvitSet',
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 16,
+                                              color: Color(0xFF7B7B7C),
+                                            ),
+                                          ),
+                                          Text(
+                                            '${Geolocator.distanceBetween(
+                                              currentLocation!.latitude,
+                                              currentLocation!.longitude,
+                                              receiverLocation!.latitude,
+                                              receiverLocation!.longitude,
+                                            ).toStringAsFixed(0)} เมตร',
+                                            style: const TextStyle(
+                                              fontFamily: 'SukhumvitSet',
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 28,
+                                              color: Color(0xFFFFFFFF),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 15),
+                                          if (isAtReceiver == true)
+                                            Column(
+                                              children: [
+                                                Column(
+                                                  children: [
+                                                    const Row(
+                                                      children: [
+                                                        Text(
+                                                          'กรุณาถ่ายภาพหลักฐานไรเดอร์นำส่งสินค้าเสร็จสิ้น',
+                                                          style: TextStyle(
+                                                            fontFamily:
+                                                                'SukhumvitSet',
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            fontSize: 14,
+                                                            color: Color(
+                                                                0xFFFFFFFF),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    const SizedBox(height: 15),
+                                                    FutureBuilder<
+                                                        ImageStatusGetResponse?>(
+                                                      future: loadDataStatus,
+                                                      builder:
+                                                          (context, snapshot) {
+                                                        if (snapshot
+                                                                .connectionState ==
+                                                            ConnectionState
+                                                                .waiting) {
+                                                          return const Center(
+                                                              child:
+                                                                  CircularProgressIndicator());
+                                                        } else if (snapshot
+                                                            .hasError) {
+                                                          return Text(
+                                                              'Error: ${snapshot.error}');
+                                                        } else if (snapshot
+                                                            .hasData) {
+                                                          final imageUrl =
+                                                              snapshot.data
+                                                                  ?.image_status;
+                                                          if (imageUrl !=
+                                                                  null &&
+                                                              imageUrl
+                                                                  .isNotEmpty) {
+                                                            return StatusPictureWidget(
+                                                              imageUrl:
+                                                                  imageUrl,
+                                                              onImageChanged:
+                                                                  (File
+                                                                      newImage) {
+                                                                statusImage =
+                                                                    newImage;
+                                                                dev.log(
+                                                                    'New image selected: ${newImage.path}');
+                                                              },
+                                                            );
+                                                          } else {
+                                                            return const Text(
+                                                                'No image available');
+                                                          }
+                                                        } else {
+                                                          return StatusPictureWidget(
+                                                            imageUrl: imageUrl,
+                                                            onImageChanged:
+                                                                (File
+                                                                    newImage) {
+                                                              statusImage =
+                                                                  newImage;
+                                                              dev.log(
+                                                                  'New image selected: ${newImage.path}');
+                                                            },
+                                                          );
+                                                        }
+                                                      },
+                                                    ),
+                                                    const SizedBox(height: 15),
+                                                    ElevatedButton(
+                                                      onPressed: _saveStatusTwo,
+                                                      style: ElevatedButton
+                                                          .styleFrom(
+                                                        backgroundColor:
+                                                            Colors.blue,
+                                                        shape:
+                                                            RoundedRectangleBorder(
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(18),
+                                                        ),
+                                                      ),
+                                                      child: const Text(
+                                                        'ส่งสินค้าเสร็จสิ้น',
+                                                        style: TextStyle(
+                                                          fontFamily:
+                                                              'SukhumvitSet',
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          fontSize: 14,
+                                                          color:
+                                                              Color(0xFFFFFFFF),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            )
+                                        ],
+                                      ),
+                                    if (status == 3)
+                                      Column(
+                                        children: [
+                                          const SizedBox(height: 15),
+                                          if (isAtReceiver == true)
+                                            Column(
+                                              children: [
+                                                const SizedBox(height: 15),
+                                                Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceEvenly,
+                                                  children: [
+                                                    Column(
+                                                      children: [
+                                                        const Text(
+                                                          'ผู้ส่ง',
+                                                          style: TextStyle(
+                                                            fontFamily:
+                                                                'SukhumvitSet',
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            fontSize: 14,
+                                                            color: Color(
+                                                                0xFF7B7B7C),
+                                                          ),
+                                                        ),
+                                                        Text(
+                                                          order_detail
+                                                              .sender_name,
+                                                          style:
+                                                              const TextStyle(
+                                                            fontFamily:
+                                                                'SukhumvitSet',
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            fontSize: 14,
+                                                            color: Color(
+                                                                0xFFFFFFFF),
+                                                          ),
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                          maxLines: 1,
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    const SizedBox(width: 10),
+                                                    const Icon(
+                                                        Icons
+                                                            .arrow_forward_rounded,
+                                                        size: 45),
+                                                    const SizedBox(width: 10),
+                                                    Column(
+                                                      children: [
+                                                        const Text(
+                                                          'ผู้รับ',
+                                                          style: TextStyle(
+                                                            fontFamily:
+                                                                'SukhumvitSet',
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            fontSize: 14,
+                                                            color: Color(
+                                                                0xFF7B7B7C),
+                                                          ),
+                                                        ),
+                                                        Text(
+                                                          order_detail
+                                                              .receiver_name,
+                                                          style:
+                                                              const TextStyle(
+                                                            fontFamily:
+                                                                'SukhumvitSet',
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            fontSize: 14,
+                                                            color: Color(
+                                                                0xFFFFFFFF),
+                                                          ),
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                          maxLines: 1,
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ],
+                                                ),
+                                                const SizedBox(height: 20),
                                                 ElevatedButton(
                                                   onPressed: () {
-                                                    CFisAtSender = true;
-                                                  }, // แก้
+                                                    GetStorage gs =
+                                                        GetStorage();
+                                                    gs.remove('oid');
+
+                                                    Get.offAll(() =>
+                                                        const Riderhome());
+                                                  },
                                                   style:
                                                       ElevatedButton.styleFrom(
                                                     backgroundColor:
@@ -284,7 +755,7 @@ class _RidermapTwoState extends State<RidermapTwo> {
                                                     ),
                                                   ),
                                                   child: const Text(
-                                                    'คุณรับสินค้าจากผู้ส่งยัง',
+                                                    'กลับหน้าหลัก',
                                                     style: TextStyle(
                                                       fontFamily:
                                                           'SukhumvitSet',
@@ -296,10 +767,9 @@ class _RidermapTwoState extends State<RidermapTwo> {
                                                   ),
                                                 ),
                                               ],
-                                            ),
+                                            )
                                         ],
                                       ),
-                                    )
                                   ],
                                 ),
                               ),
@@ -307,29 +777,6 @@ class _RidermapTwoState extends State<RidermapTwo> {
                           );
                         });
                   }),
-            Positioned(
-              top: 50,
-              left: 10,
-              child: ClipOval(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
-                  child: Container(
-                    padding: const EdgeInsets.all(5),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.5),
-                      shape: BoxShape.circle,
-                    ),
-                    child: IconButton(
-                      icon: const Icon(
-                        Icons.arrow_back_ios_new_rounded,
-                        color: Colors.white,
-                      ),
-                      onPressed: () => Get.to(() => const Deliverylist()),
-                    ),
-                  ),
-                ),
-              ),
-            ),
           ],
         ),
       ),
@@ -413,7 +860,7 @@ class _RidermapTwoState extends State<RidermapTwo> {
   }
 
   Future<void> _updateRiderLocation(Position position) async {
-    if (!mounted) return; // Added mounted check
+    if (!mounted) return;
 
     if (currentLocation != null) {
       double distance = Geolocator.distanceBetween(
@@ -425,8 +872,7 @@ class _RidermapTwoState extends State<RidermapTwo> {
 
       if (distance < 0) return;
     }
-    final ByteData data = await rootBundle
-        .load('assets/icon/motorcycle.png'); // เปลี่ยนชื่อไฟล์ให้ตรง
+    final ByteData data = await rootBundle.load('assets/icon/motorcycle.png');
     final Uint8List bytes = data.buffer.asUint8List();
     final BitmapDescriptor customIcon = BitmapDescriptor.fromBytes(bytes);
 
@@ -452,11 +898,11 @@ class _RidermapTwoState extends State<RidermapTwo> {
   Future<void> _updateFirestoreLocation(Position position) async {
     GetStorage gs = GetStorage();
     int uid = gs.read('uid');
-    if (!mounted || orderId == null) return; // Added mounted check
+    if (!mounted || orderId == null) return;
 
     try {
       await _firestore.collection('rider_locations').doc(orderId).set({
-        'riderId': 'RIDER_ID',
+        'riderId': uid,
         'orderId': orderId,
         'location': GeoPoint(position.latitude, position.longitude),
         'timestamp': FieldValue.serverTimestamp(),
@@ -467,7 +913,6 @@ class _RidermapTwoState extends State<RidermapTwo> {
       }, SetOptions(merge: true));
     } catch (e) {
       print('Error updating Firestore: $e');
-      // Don't show error to user as this is not critical
     }
   }
 
@@ -495,24 +940,29 @@ class _RidermapTwoState extends State<RidermapTwo> {
     bool wasAtReceiver = isAtReceiver;
 
     setState(() {
-      isAtSender = distanceToSender <= 50;
-      isAtReceiver = distanceToReceiver <= 50;
+      isAtSender = distanceToSender <= 5;
+      isAtReceiver = distanceToReceiver <= 555;
     });
 
     if (!_dialogShown) {
       dev.log('Entering the if condition', name: 'Snackbar Debug');
+
       if (isAtSender && !wasAtSender) {
         _dialogShown = true;
+        initialChildSize = 0.6;
+        _showDestinationReachedDialog(
+          'แจ้งเตือน!!',
+          'คุณมาถึงจุดรับสินค้าแล้ว',
+          backgroundColor: Colors.blue,
+        );
       } else if (isAtReceiver && !wasAtReceiver) {
         _dialogShown = true;
-      }
-      if (isAtSender == true) {
-        _showDestinationReachedDialog('แจ้งเตือน!!', 'คุณมาถึงจุดรับสินค้าแล้ว',
-            backgroundColor: Colors.blue);
-      }
-      if (isAtReceiver == true) {
-        _showDestinationReachedDialog('แจ้งเตือน!!', 'คุณมาถึงจุดส่งสินค้าแล้ว',
-            backgroundColor: Colors.blue);
+        initialChildSize = 0.6;
+        _showDestinationReachedDialog(
+          'แจ้งเตือน!!',
+          'คุณมาถึงจุดส่งสินค้าแล้ว',
+          backgroundColor: Colors.blue,
+        );
       }
     }
   }
@@ -560,7 +1010,7 @@ class _RidermapTwoState extends State<RidermapTwo> {
             '&destination=${end.latitude},${end.longitude}'
             '&key=$googleMapsApiKey',
           ))
-          .timeout(const Duration(seconds: 10)); // Added timeout
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -568,7 +1018,7 @@ class _RidermapTwoState extends State<RidermapTwo> {
           List<LatLng> route = [];
           for (var step in data['routes'][0]['legs'][0]['steps']) {
             final String polyline = step['polyline']['points'];
-            route.addAll(_decodePoly(polyline)); // Changed to private method
+            route.addAll(_decodePoly(polyline));
           }
           return route;
         }
@@ -577,7 +1027,6 @@ class _RidermapTwoState extends State<RidermapTwo> {
       throw Exception('Failed to load directions: ${response.statusCode}');
     } catch (e) {
       print('Error fetching route: $e');
-      // Return direct line if route fetching fails
       return [start, end];
     }
   }
@@ -612,7 +1061,11 @@ class _RidermapTwoState extends State<RidermapTwo> {
     return points;
   }
 
-  Future<OrdersGetData> fetchOrderData(int orderId) async {
+  Future<OrdersGetData> fetchOrderData(String? orderId) async {
+    if (orderId == null || orderId.isEmpty) {
+      throw Exception('OrderId is required');
+    }
+
     try {
       final response = await http.get(
         Uri.parse('$API_ENDPOINT/rider/orders/$orderId'),
@@ -626,6 +1079,112 @@ class _RidermapTwoState extends State<RidermapTwo> {
     } catch (e) {
       print('Error fetching order data: $e');
       rethrow;
+    }
+  }
+
+  Future<void> _initializeLocations() async {
+    if (!mounted) return;
+
+    // ตรวจสอบ orderId ก่อนใช้งาน
+    if (orderId == null) {
+      Get.snackbar(
+        'Error',
+        'Order ID is missing',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 3),
+      );
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final orders = await fetchOrderData(orderId);
+
+      // ตรวจสอบที่อยู่ก่อนแปลงเป็นพิกัด
+      if (orders.sender_address == null || orders.sender_address.isEmpty) {
+        throw Exception('Sender address is missing');
+      }
+      if (orders.receiver_address == null || orders.receiver_address.isEmpty) {
+        throw Exception('Receiver address is missing');
+      }
+
+      List<Location> senderLocations =
+          await locationFromAddress(orders.sender_address);
+      LatLng? tempSenderLocation;
+      if (senderLocations.isNotEmpty) {
+        tempSenderLocation = LatLng(
+          senderLocations.first.latitude,
+          senderLocations.first.longitude,
+        );
+      }
+
+      List<Location> receiverLocations =
+          await locationFromAddress(orders.receiver_address);
+      LatLng? tempReceiverLocation;
+      if (receiverLocations.isNotEmpty) {
+        tempReceiverLocation = LatLng(
+          receiverLocations.first.latitude,
+          receiverLocations.first.longitude,
+        );
+      }
+
+      if (!mounted) return;
+
+      setState(() {
+        senderLocation = tempSenderLocation;
+        receiverLocation = tempReceiverLocation;
+
+        if (senderLocation != null) {
+          markers.add(Marker(
+            markerId: const MarkerId('sender'),
+            position: senderLocation!,
+            icon:
+                BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+            infoWindow: InfoWindow(
+              title: 'ผู้ส่ง: ${orders.sender_name}',
+              snippet: orders.sender_address,
+            ),
+          ));
+        }
+
+        if (receiverLocation != null) {
+          markers.add(Marker(
+            markerId: const MarkerId('receiver'),
+            position: receiverLocation!,
+            icon:
+                BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+            infoWindow: InfoWindow(
+              title: 'ผู้รับ: ${orders.receiver_name}',
+              snippet: orders.receiver_address,
+            ),
+          ));
+        }
+
+        isLoading = false;
+      });
+
+      if (mapController != null) {
+        _updateCameraPosition();
+      }
+    } catch (e) {
+      print('Error initializing locations: $e');
+      if (!mounted) return;
+
+      setState(() {
+        isLoading = false;
+      });
+
+      Get.snackbar(
+        'Error',
+        'Failed to initialize locations. Please try again.',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 3),
+      );
     }
   }
 
@@ -656,79 +1215,481 @@ class _RidermapTwoState extends State<RidermapTwo> {
     }
   }
 
-  Future<void> _initializeLocations() async {
-    if (!mounted) return;
-
+  Future<ImageStatusGetResponse?> fetchStatusData() async {
     try {
-      final orders = await orderData;
+      final response = await http.get(
+        Uri.parse('$API_ENDPOINT/rider/orders/image/status/$orderId'),
+        headers: {"Content-Type": "application/json; charset=utf-8"},
+      );
 
-      List<Location> senderLocations =
-          await locationFromAddress(orders.sender_address);
-      if (senderLocations.isNotEmpty) {
-        senderLocation = LatLng(
-          senderLocations.first.latitude,
-          senderLocations.first.longitude,
-        );
-      }
-
-      List<Location> receiverLocations =
-          await locationFromAddress(orders.receiver_address);
-      if (receiverLocations.isNotEmpty) {
-        receiverLocation = LatLng(
-          receiverLocations.first.latitude,
-          receiverLocations.first.longitude,
-        );
-      }
-
-      if (mounted) {
-        setState(() {
-          if (senderLocation != null) {
-            markers.add(Marker(
-              markerId: const MarkerId('sender'),
-              position: senderLocation!,
-              icon: BitmapDescriptor.defaultMarkerWithHue(
-                  BitmapDescriptor.hueBlue),
-              infoWindow: InfoWindow(
-                title: 'ผู้ส่ง: ${orders.sender_name}',
-                snippet: orders.sender_address,
-              ),
-            ));
-          }
-
-          if (receiverLocation != null) {
-            markers.add(Marker(
-              markerId: const MarkerId('receiver'),
-              position: receiverLocation!,
-              icon: BitmapDescriptor.defaultMarkerWithHue(
-                  BitmapDescriptor.hueRed),
-              infoWindow: InfoWindow(
-                title: 'ผู้รับ: ${orders.receiver_name}',
-                snippet: orders.receiver_address,
-              ),
-            ));
-          }
-
-          isLoading = false;
-        });
-
-        if (mapController != null) {
-          _updateCameraPosition();
+      if (response.statusCode == 200) {
+        var responseData = jsonDecode(response.body);
+        if (responseData.isEmpty) {
+          return null;
         }
+        return ImageStatusGetResponse.fromJson(responseData);
+      } else if (response.statusCode == 404) {
+        return null;
+      } else {
+        throw Exception('Failed to load orders data: ${response.reasonPhrase}');
       }
     } catch (e) {
-      print('Error initializing locations: $e');
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
-        Get.snackbar(
-          'Error',
-          'Failed to initialize locations. Please try again.',
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-          duration: const Duration(seconds: 3),
-        );
-      }
+      print('Error fetching status data: $e');
+      return null;
     }
+  }
+
+  Future<void> _saveStatusOne() async {
+    CFisAtSender = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (statusImage == null) {
+        _showDestinationReachedDialog(
+          'ไม่สำเร็จ!',
+          'กรุณาถ่ายภาพเก็บหลักฐานก่อน',
+          backgroundColor: const Color(0xFFF92A47),
+        );
+        return;
+      }
+      showModalBottomSheet(
+        context: context,
+        backgroundColor: Colors.transparent,
+        builder: (BuildContext context) {
+          return Stack(
+            children: [
+              Positioned.fill(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+                  child: Container(
+                    color: Colors.transparent,
+                  ),
+                ),
+              ),
+              Container(
+                height: 370,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF1D1D1F),
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(35),
+                    topRight: Radius.circular(35),
+                  ),
+                ),
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 80,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF4A4A4C),
+                        borderRadius: BorderRadius.circular(5),
+                      ),
+                    ),
+                    const SizedBox(height: 80),
+                    const Text(
+                      'ยืนยันส่งข้อมูล',
+                      style: TextStyle(
+                        fontFamily: 'SukhumvitSet',
+                        fontWeight: FontWeight.bold,
+                        fontSize: 24,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    const Text(
+                      'คุณต้องการส่งภาพนี้ใช่ไหม?',
+                      style: TextStyle(
+                        fontFamily: 'SukhumvitSet',
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Color(0xFF6C6C6C),
+                      ),
+                    ),
+                    const SizedBox(height: 50),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        TextButton(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                          },
+                          child: const Padding(
+                            padding: EdgeInsets.all(20),
+                            child: Text(
+                              'ยกเลิก',
+                              style: TextStyle(
+                                fontFamily: 'SukhumvitSet',
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: Color(0xFF6C6C6C),
+                              ),
+                            ),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () async {
+                            final overlayState = Overlay.of(context);
+                            if (overlayState == null) {
+                              _showDestinationReachedDialog(
+                                'Error!',
+                                'Cannot find overlay in the current context',
+                                backgroundColor: const Color(0xFFF92A47),
+                              );
+                              return;
+                            }
+
+                            OverlayEntry overlayEntry = _createOverlayEntry();
+                            overlayState.insert(overlayEntry);
+
+                            String? imageUrl;
+                            int statusInt = 2;
+                            String status = statusInt.toString();
+
+                            try {
+                              if (statusImage != null) {
+                                String? order_id = orderId;
+                                imageUrl = await uploadImageToFirebase(
+                                    order_id!, status, statusImage!);
+                                if (imageUrl == null) {
+                                  overlayEntry.remove();
+                                  _showDestinationReachedDialog(
+                                    'ไม่สำเร็จ!',
+                                    'ไม่สามารถอัปโหลดรูปภาพได้!',
+                                    backgroundColor: const Color(0xFFF92A47),
+                                  );
+                                  return;
+                                }
+                              }
+
+                              dev.log(
+                                  "Order ID: $orderId, Image URL: $imageUrl, Status: $status");
+
+                              var data = ImageStatusGetResponse(
+                                order_id: int.parse(orderId ?? '0'),
+                                image_status: imageUrl ?? '',
+                                status: statusInt,
+                              );
+
+                              var response = await http.post(
+                                Uri.parse(
+                                    '$API_ENDPOINT/rider/orders/image/status'),
+                                headers: {
+                                  "Content-Type":
+                                      "application/json; charset=utf-8"
+                                },
+                                body: jsonEncode(data.toJson()),
+                              );
+
+                              dev.log(
+                                  "Response Status: ${response.statusCode}");
+                              dev.log("Response Body: ${response.body}");
+
+                              if (response.statusCode == 200) {
+                                _showDestinationReachedDialog(
+                                  'สำเร็จ!',
+                                  'อัพรูปสำเร็จแล้ว',
+                                  backgroundColor: Colors.blue,
+                                );
+                                setState(() {
+                                  orderData = fetchOrderData(orderId);
+                                });
+                              } else {
+                                _showDestinationReachedDialog(
+                                  'ไม่สำเร็จ!',
+                                  'ไม่สำเร็จ',
+                                  backgroundColor: const Color(0xFFF92A47),
+                                );
+                              }
+                            } catch (e) {
+                              _showDestinationReachedDialog(
+                                  'ไม่สำเร็จ!', 'ลองใหม่อีกครั้ง',
+                                  backgroundColor: const Color(0xFFF92A47));
+                            } finally {
+                              overlayEntry.remove();
+                            }
+
+                            Navigator.of(context).pop();
+                          },
+                          child: const Padding(
+                            padding: EdgeInsets.all(20),
+                            child: Text(
+                              'ยืนยัน',
+                              style: TextStyle(
+                                fontFamily: 'SukhumvitSet',
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: Colors.blue,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
+      );
+    });
+  }
+
+  Future<void> _saveStatusTwo() async {
+    CFisAtReceiver = true;
+    if (statusImage == null) {
+      _showDestinationReachedDialog(
+        'ไม่สำเร็จ!',
+        'กรุณาถ่ายภาพเก็บหลักฐานก่อน',
+        backgroundColor: const Color(0xFFF92A47),
+      );
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      showModalBottomSheet(
+        context: context,
+        backgroundColor: Colors.transparent,
+        builder: (BuildContext context) {
+          return Stack(
+            children: [
+              Positioned.fill(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+                  child: Container(
+                    color: Colors.transparent,
+                  ),
+                ),
+              ),
+              Container(
+                height: 370,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF1D1D1F),
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(35),
+                    topRight: Radius.circular(35),
+                  ),
+                ),
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 80,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF4A4A4C),
+                        borderRadius: BorderRadius.circular(5),
+                      ),
+                    ),
+                    const SizedBox(height: 80),
+                    const Text(
+                      'ยืนยันส่งข้อมูล',
+                      style: TextStyle(
+                        fontFamily: 'SukhumvitSet',
+                        fontWeight: FontWeight.bold,
+                        fontSize: 24,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    const Text(
+                      'คุณต้องการส่งภาพนี้ใช่ไหม?',
+                      style: TextStyle(
+                        fontFamily: 'SukhumvitSet',
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Color(0xFF6C6C6C),
+                      ),
+                    ),
+                    const SizedBox(height: 50),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        TextButton(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                          },
+                          child: const Padding(
+                            padding: EdgeInsets.all(20),
+                            child: Text(
+                              'ยกเลิก',
+                              style: TextStyle(
+                                fontFamily: 'SukhumvitSet',
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: Color(0xFF6C6C6C),
+                              ),
+                            ),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () async {
+                            final overlayState = Overlay.of(context);
+                            if (overlayState == null) {
+                              _showDestinationReachedDialog(
+                                'Error!',
+                                'Cannot find overlay in the current context',
+                                backgroundColor: const Color(0xFFF92A47),
+                              );
+                              return;
+                            }
+
+                            OverlayEntry overlayEntry = _createOverlayEntry();
+                            overlayState.insert(overlayEntry);
+
+                            String? imageUrl;
+                            int statusInt = 3;
+                            String status = statusInt.toString();
+
+                            try {
+                              if (statusImage != null) {
+                                String? order_id = orderId;
+                                imageUrl = await uploadImageToFirebase(
+                                    order_id!, status, statusImage!);
+                                if (imageUrl == null) {
+                                  overlayEntry.remove();
+                                  _showDestinationReachedDialog(
+                                    'ไม่สำเร็จ!',
+                                    'ไม่สามารถอัปโหลดรูปภาพได้!',
+                                    backgroundColor: const Color(0xFFF92A47),
+                                  );
+                                  return;
+                                }
+                              }
+
+                              dev.log(
+                                  "Order ID: $orderId, Image URL: $imageUrl, Status: $status");
+
+                              var data = ImageStatusGetResponse(
+                                order_id: int.parse(orderId ?? '0'),
+                                image_status: imageUrl ?? '',
+                                status: statusInt,
+                              );
+
+                              var response = await http.post(
+                                Uri.parse(
+                                    '$API_ENDPOINT/rider/orders/image/status/success'),
+                                headers: {
+                                  "Content-Type":
+                                      "application/json; charset=utf-8"
+                                },
+                                body: jsonEncode(data.toJson()),
+                              );
+
+                              dev.log(
+                                  "Response Status: ${response.statusCode}");
+                              dev.log("Response Body: ${response.body}");
+
+                              if (response.statusCode == 200) {
+                                _showDestinationReachedDialog(
+                                  'สำเร็จ!',
+                                  'อัพรูปสำเร็จแล้ว',
+                                  backgroundColor: Colors.blue,
+                                );
+                                setState(() {
+                                  orderData = fetchOrderData(orderId);
+                                });
+                              } else {
+                                _showDestinationReachedDialog(
+                                  'ไม่สำเร็จ!',
+                                  'ไม่สำเร็จ',
+                                  backgroundColor: const Color(0xFFF92A47),
+                                );
+                              }
+                            } catch (e) {
+                              _showDestinationReachedDialog(
+                                  'ไม่สำเร็จ!', 'ลองใหม่อีกครั้ง',
+                                  backgroundColor: const Color(0xFFF92A47));
+                            } finally {
+                              overlayEntry
+                                  .remove(); // Ensure overlayEntry is removed at the end
+                            }
+
+                            Navigator.of(context).pop(); // ปิด BottomSheet
+                          },
+                          child: const Padding(
+                            padding: EdgeInsets.all(20),
+                            child: Text(
+                              'ยืนยัน',
+                              style: TextStyle(
+                                fontFamily: 'SukhumvitSet',
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: Colors.blue,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
+      );
+    });
+  }
+
+  Future<String?> uploadImageToFirebase(
+      String orderId, String status, File imageFile) async {
+    try {
+      final int fileSizeInBytes = await imageFile.length();
+      if (fileSizeInBytes > 5 * 1024 * 1024) {
+        debugPrint('File size too large: ${fileSizeInBytes / 1024 / 1024} MB');
+        return null;
+      }
+
+      // ตรวจสอบนามสกุลไฟล์
+      final String extension = path.extension(imageFile.path).toLowerCase();
+      if (!['.jpg', '.jpeg', '.png'].contains(extension)) {
+        debugPrint('Invalid file type: $extension');
+        return null;
+      }
+
+      try {
+        final String fileName =
+            DateTime.now().millisecondsSinceEpoch.toString();
+        final Reference firebaseStorageRef = FirebaseStorage.instance
+            .ref()
+            .child('order_images/$orderId/$fileName');
+
+        final UploadTask uploadTask = firebaseStorageRef.putFile(imageFile);
+
+        uploadTask.snapshotEvents.listen((TaskSnapshot snapshot) {
+          debugPrint(
+              'Upload progress: ${snapshot.bytesTransferred}/${snapshot.totalBytes}');
+        }, onError: (e) {
+          debugPrint('Upload error: $e');
+        });
+
+        final TaskSnapshot taskSnapshot = await uploadTask;
+        final String downloadUrl = await taskSnapshot.ref.getDownloadURL();
+        debugPrint('Upload successful. Download URL: $downloadUrl');
+        return downloadUrl;
+      } catch (e) {
+        debugPrint('Error in uploadImageToFirebase: $e');
+        return null;
+      }
+    } catch (e) {
+      debugPrint('Error in uploadImageToFirebase: $e');
+      return null;
+    }
+  }
+
+  OverlayEntry _createOverlayEntry() {
+    return OverlayEntry(
+      builder: (context) => Container(
+        color: Colors.black.withOpacity(0.7),
+        child: Center(
+          child: Image.asset(
+            'assets/gif/load.gif',
+            width: 150,
+            height: 150,
+          ),
+        ),
+      ),
+    );
   }
 }

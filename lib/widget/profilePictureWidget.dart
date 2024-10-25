@@ -56,7 +56,7 @@ class _ProfilePictureWidgetState extends State<ProfilePictureWidget> {
                   children: <Widget>[
                     ListTile(
                       leading: Icon(Icons.camera_alt),
-                      title: Text('Take a photo'),
+                      title: Text('ถ่ายภาพจากล้อง'),
                       onTap: () {
                         Navigator.pop(context);
                         _updateProfilePicture(ImageSource.camera);
@@ -64,7 +64,7 @@ class _ProfilePictureWidgetState extends State<ProfilePictureWidget> {
                     ),
                     ListTile(
                       leading: Icon(Icons.photo_library),
-                      title: Text('Choose from gallery'),
+                      title: Text('เลือกภาพจากคลังภาพ'),
                       onTap: () {
                         Navigator.pop(context);
                         _updateProfilePicture(ImageSource.gallery);

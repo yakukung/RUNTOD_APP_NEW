@@ -55,16 +55,16 @@ class _StatusPictureWidgetState extends State<StatusPictureWidget> {
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     ListTile(
-                      leading: Icon(Icons.camera_alt),
-                      title: Text('Take a photo'),
+                      leading: const Icon(Icons.camera_alt),
+                      title: const Text('ถ่ายภาพจากล้อง'),
                       onTap: () {
                         Navigator.pop(context);
                         _updateProfilePicture(ImageSource.camera);
                       },
                     ),
                     ListTile(
-                      leading: Icon(Icons.photo_library),
-                      title: Text('Choose from gallery'),
+                      leading: const Icon(Icons.photo_library),
+                      title: const Text('เลือกภาพจากคลังภาพ'),
                       onTap: () {
                         Navigator.pop(context);
                         _updateProfilePicture(ImageSource.gallery);
@@ -77,28 +77,26 @@ class _StatusPictureWidgetState extends State<StatusPictureWidget> {
           );
         },
         child: Container(
-          width: 120,
-          height: 120,
+          width: 200,
+          height: 200,
           decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: Colors.grey,
-              width: 2,
-            ),
+            borderRadius: BorderRadius.circular(20),
+            color: const Color(0xFF43474E),
           ),
-          child: ClipOval(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
             child: _image != null
                 ? Image.file(
                     _image!,
-                    width: 120,
-                    height: 120,
+                    width: 200,
+                    height: 200,
                     fit: BoxFit.cover,
                   )
                 : widget.imageUrl.isNotEmpty
                     ? Image.network(
                         widget.imageUrl,
-                        width: 120,
-                        height: 120,
+                        width: 200,
+                        height: 200,
                         fit: BoxFit.cover,
                         loadingBuilder: (context, child, progress) {
                           if (progress == null) return child;
@@ -112,16 +110,16 @@ class _StatusPictureWidgetState extends State<StatusPictureWidget> {
                           );
                         },
                         errorBuilder: (context, error, stackTrace) {
-                          return Icon(
-                            Icons.person,
-                            size: 60,
+                          return const Icon(
+                            Icons.add_a_photo,
+                            size: 50,
                             color: Colors.grey,
                           );
                         },
                       )
-                    : Icon(
-                        Icons.person,
-                        size: 60,
+                    : const Icon(
+                        Icons.add_a_photo,
+                        size: 50,
                         color: Colors.grey,
                       ),
           ),

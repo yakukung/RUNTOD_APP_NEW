@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'dart:async';
+import 'dart:developer' as dev;
 import 'dart:typed_data';
 import 'dart:ui';
 import 'package:flutter/material.dart';
@@ -27,8 +28,8 @@ class RidermapOne extends StatefulWidget {
 
 class _RidermapOneState extends State<RidermapOne> {
   GoogleMapController? mapController;
-  final Set<Marker> markers = {}; // Changed to final
-  final Set<Polyline> polylines = {}; // Changed to final
+  final Set<Marker> markers = {};
+  final Set<Polyline> polylines = {};
   LatLng? senderLocation, receiverLocation, currentLocation;
   bool isLoading = true;
   bool isAtSender = false;
@@ -39,6 +40,11 @@ class _RidermapOneState extends State<RidermapOne> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   String? orderId;
   bool _dialogShown = false;
+  bool Checkdistance = false;
+
+  bool isNearSender = false;
+  bool isNearReceiver = false;
+  final double proximityThreshold = 20.0;
 
   final String googleMapsApiKey = 'AIzaSyCAcu7KNBNl-YiZ9YsZiZ6jpQQYmdXwjYU';
 
@@ -457,7 +463,7 @@ class _RidermapOneState extends State<RidermapOne> {
   }
 
   Future<void> _updateRiderLocation(Position position) async {
-    if (!mounted) return; // Added mounted check
+    if (!mounted) return;
 
     if (currentLocation != null) {
       double distance = Geolocator.distanceBetween(
@@ -467,10 +473,9 @@ class _RidermapOneState extends State<RidermapOne> {
         position.longitude,
       );
 
-      if (distance < 0) return; // Ignore small movements
+      if (distance < 0) return;
     }
-    final ByteData data = await rootBundle
-        .load('assets/icon/motorcycle.png'); // เปลี่ยนชื่อไฟล์ให้ตรง
+    final ByteData data = await rootBundle.load('assets/icon/motorcycle.png');
     final Uint8List bytes = data.buffer.asUint8List();
     final BitmapDescriptor customIcon = BitmapDescriptor.fromBytes(bytes);
 
@@ -496,7 +501,7 @@ class _RidermapOneState extends State<RidermapOne> {
   Future<void> _updateFirestoreLocation(Position position) async {
     GetStorage gs = GetStorage();
     int uid = gs.read('uid');
-    if (!mounted || orderId == null) return; // Added mounted check
+    if (!mounted || orderId == null) return;
 
     try {
       await _firestore.collection('rider_locations').doc(orderId).set({
@@ -699,6 +704,33 @@ class _RidermapOneState extends State<RidermapOne> {
         );
       }
 
+      if (senderLocation != null && receiverLocation != null) {
+        double distanceBetweenPoints = Geolocator.distanceBetween(
+          senderLocation!.latitude,
+          senderLocation!.longitude,
+          receiverLocation!.latitude,
+          receiverLocation!.longitude,
+        );
+
+        bool isWithinDistance = distanceBetweenPoints <= 20;
+
+        dev.log(
+            'ระยะห่างระหว่างจุดรับและจุดส่ง: ${distanceBetweenPoints.toStringAsFixed(2)} เมตร');
+        dev.log(
+            'อยู่ในระยะ 20 เมตรหรือไม่: ${isWithinDistance ? "ใช่" : "ไม่"}');
+
+        if (isWithinDistance && mounted) {
+          Checkdistance = true;
+          Get.snackbar(
+            'แจ้งเตือน',
+            'จุดรับและจุดส่งอยู่ในระยะไม่เกิน 20 เมตร',
+            backgroundColor: Colors.orange,
+            colorText: Colors.white,
+            duration: const Duration(seconds: 5),
+          );
+        }
+      }
+
       if (mounted) {
         setState(() {
           if (senderLocation != null) {
@@ -730,7 +762,6 @@ class _RidermapOneState extends State<RidermapOne> {
           isLoading = false;
         });
 
-        // Update camera position after markers are added
         if (mapController != null) {
           _updateCameraPosition();
         }
@@ -755,8 +786,6 @@ class _RidermapOneState extends State<RidermapOne> {
   Future<void> _GetJob(int orderId) async {
     GetStorage gs = GetStorage();
     int uid = gs.read('uid');
-    print('ค่าออเดอร์ที่ส่งออก: $orderId');
-    log(orderId);
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -835,38 +864,46 @@ class _RidermapOneState extends State<RidermapOne> {
                       ),
                       TextButton(
                         onPressed: () async {
-                          var data = RiderGetJobRequest(
-                            uid: uid,
-                            order_id: orderId,
-                          );
-                          var response = await http.put(
-                            Uri.parse('$API_ENDPOINT/rider/orders/get-job'),
-                            headers: {
-                              "Content-Type": "application/json; charset=utf-8"
-                            },
-                            body: jsonEncode(data.toJson()),
-                          );
+                          if (Checkdistance = true) {
+                            var data = RiderGetJobRequest(
+                              uid: uid,
+                              order_id: orderId,
+                            );
+                            var response = await http.put(
+                              Uri.parse('$API_ENDPOINT/rider/orders/get-job'),
+                              headers: {
+                                "Content-Type":
+                                    "application/json; charset=utf-8"
+                              },
+                              body: jsonEncode(data.toJson()),
+                            );
 
-                          if (response.statusCode == 200) {
-                            Get.to(() => const RidermapTwo(),
-                                arguments: orderId);
-                            showSnackbar('สำเร็จ!', 'รับส่งสินค้านี้',
-                                backgroundColor: Colors.blue);
-                          } else {
-                            try {
-                              var errorMessage =
-                                  jsonDecode(response.body)['error'] ??
-                                      'เกิดข้อผิดพลาด';
-                              showSnackbar('ไม่สำเร็จ!', errorMessage,
-                                  backgroundColor: Colors.red);
-                              Navigator.of(context).pop();
-                            } catch (e) {
-                              // ถ้าไม่สามารถ decode JSON ได้ แสดงข้อความ HTML
-                              showSnackbar('ไม่สำเร็จ!',
-                                  'เกิดข้อผิดพลาด: ${response.body}',
-                                  backgroundColor: Colors.red);
-                              Navigator.of(context).pop();
+                            if (response.statusCode == 200) {
+                              GetStorage gs = GetStorage();
+                              gs.write('oid', orderId.toString());
+                              Get.to(() => const RidermapTwo(),
+                                  arguments: orderId);
+                              showSnackbar('สำเร็จ!', 'รับส่งสินค้านี้',
+                                  backgroundColor: Colors.blue);
+                            } else {
+                              try {
+                                var errorMessage =
+                                    jsonDecode(response.body)['error'] ??
+                                        'เกิดข้อผิดพลาด';
+                                showSnackbar('ไม่สำเร็จ!', errorMessage,
+                                    backgroundColor: Colors.red);
+                                Navigator.of(context).pop();
+                              } catch (e) {
+                                showSnackbar('รับออเดอร์ไม่สำเร็จ!',
+                                    'เกิดข้อผิดพลาด: ${response.body}',
+                                    backgroundColor: Colors.red);
+                                Navigator.of(context).pop();
+                              }
                             }
+                          } else {
+                            showSnackbar('รับออเดอร์ไม่สำเร็จ!',
+                                'จุดผู้รับ กับ จุดผู้ส่ง ระยะเกิน 20 เมตร',
+                                backgroundColor: Colors.red);
                           }
                         },
                         child: Padding(
