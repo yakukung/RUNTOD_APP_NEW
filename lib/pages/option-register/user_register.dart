@@ -58,26 +58,19 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
                 children: [
                   Padding(
                     padding: const EdgeInsets.only(top: 40, left: 10),
-                    child: Positioned(
-                      child: ClipOval(
-                        child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
-                          child: Container(
-                            padding: const EdgeInsets.all(5),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.withOpacity(0.2),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Transform.translate(
-                              offset: const Offset(-1.0, 0.0),
-                              child: IconButton(
-                                icon: const Icon(
-                                    Icons.arrow_back_ios_new_rounded,
-                                    color: Colors.white),
-                                onPressed: () =>
-                                    Get.to(() => const LoginPage()),
-                              ),
-                            ),
+                    child: ClipOval(
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+                        child: Container(
+                          padding: const EdgeInsets.all(5),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.withOpacity(0.2),
+                            shape: BoxShape.circle,
+                          ),
+                          child: IconButton(
+                            icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                                color: Colors.white),
+                            onPressed: () => Get.to(() => const LoginPage()),
                           ),
                         ),
                       ),

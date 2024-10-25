@@ -940,8 +940,8 @@ class _RidermapTwoState extends State<RidermapTwo> {
     bool wasAtReceiver = isAtReceiver;
 
     setState(() {
-      isAtSender = distanceToSender <= 5;
-      isAtReceiver = distanceToReceiver <= 555;
+      isAtSender = distanceToSender <= 95;
+      isAtReceiver = distanceToReceiver <= 32;
     });
 
     if (!_dialogShown) {

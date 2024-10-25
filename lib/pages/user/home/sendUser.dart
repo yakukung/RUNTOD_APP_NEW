@@ -262,10 +262,10 @@ class _SenduserPageState extends State<SenduserPage> {
     );
   }
 
- Future<void> _confirmDelivery() async {
+  Future<void> _confirmDelivery() async {
     GetStorage gs = GetStorage();
-    int? uid = gs.read('uid');
-    
+    int uid = gs.read('uid');
+
     final selectedProductIds = <int>[]; // เก็บ id สินค้าที่ถูกเลือก
 
     final products = await loadProductData;

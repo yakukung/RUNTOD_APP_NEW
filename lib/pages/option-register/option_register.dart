@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:runtod_app/pages/option-register/rider_register.dart';
 
+import 'package:runtod_app/pages/option-register/rider_register.dart';
 import 'package:runtod_app/pages/option-register/user_register.dart';
 
 class OptionRegisterPage extends StatefulWidget {
@@ -65,10 +65,15 @@ class _OptionRegisterPageState extends State<OptionRegisterPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     buildOptionButton(Icons.person_rounded, 'ผู้ใช้ระบบ', () {
-                      Get.to(() => const UserRegisterPage());
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const UserRegisterPage(),
+                        ),
+                      );
                     }),
                     buildOptionButton(Icons.motorcycle_rounded, 'ไรเดอร์', () {
-                      Get.to(() => const RiderRegisterPage());
+                      Get.to(() => RiderRegisterPage());
                     }),
                   ],
                 )
@@ -76,11 +81,16 @@ class _OptionRegisterPageState extends State<OptionRegisterPage> {
                 Column(
                   children: [
                     buildOptionButton(Icons.person_rounded, 'ผู้ใช้ระบบ', () {
-                      Get.to(() => const UserRegisterPage());
+                      Get.to(() => UserRegisterPage());
                     }),
                     const SizedBox(height: 30),
                     buildOptionButton(Icons.motorcycle_rounded, 'ไรเดอร์', () {
-                      Get.to(() => const RiderRegisterPage());
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const RiderRegisterPage(),
+                        ),
+                      );
                     }),
                   ],
                 ),
